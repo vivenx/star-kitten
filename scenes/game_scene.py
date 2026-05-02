@@ -1,17 +1,23 @@
 import pygame
 from core.player import Player
+from components.health_bar import HealthBar
 
 
 class GameScene:
     def __init__(self, game):
         self.game = game
         self.player = None
+        self.health_bar = None
 
         self._create_player()
+        self._create_health_bar()
 
     def _create_player(self):
         screen_width, screen_height = self.game.screen.get_size()
         self.player = Player(screen_width // 2 - 50, screen_height // 2 - 50)
+
+    def _create_health_bar(self):
+        self.health_bar = HealthBar(10, 10)
 
     def handle_events(self):
         for event in pygame.event.get():
@@ -45,3 +51,10 @@ class GameScene:
 
         if self.player:
             self.game.screen.blit(self.player.image, self.player.rect)
+            self._draw_ui()
+
+    def _draw_ui(self):
+        """Отрисовка интерфейса с HP"""
+        # Отрисовка полоски здоровья через HealthBar
+        if self.health_bar:
+            self.health_bar.draw(self.game.screen, self.player.hp, self.player.max_hp)

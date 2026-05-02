@@ -45,6 +45,32 @@ class Player(pygame.sprite.Sprite):
 
         self.is_moving = False
 
+        # Система характеристик
+        self.max_hp = 100
+        self.hp = self.max_hp
+
+    def take_damage(self, damage):
+        """Получить урон"""
+        self.hp -= damage
+        if self.hp <= 0:
+            self.hp = 0
+            return True  # Игрок умер
+        return False  # Игрок жив
+
+    def heal(self, amount):
+        """Восстановить здоровье"""
+        self.hp += amount
+        if self.hp > self.max_hp:
+            self.hp = self.max_hp
+
+    def is_alive(self):
+        """Проверить, жив ли игрок"""
+        return self.hp > 0
+
+    def get_hp_percent(self):
+        """Получить процент текущего здоровья"""
+        return self.hp / self.max_hp
+
     def update(self):
         if self.is_moving:
             self.animation_counter += 1
