@@ -21,10 +21,10 @@ class MenuScene:
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
                     mouse_pos = pygame.mouse.get_pos()
-                    
+
                     if self.point_in_polygon(mouse_pos, self.start_button_points):
                         self.game.change_scene("game")
-                    
+
                     if self.point_in_polygon(mouse_pos, self.exit_button_points):
                         self.game.running = False
 
@@ -33,7 +33,6 @@ class MenuScene:
         pass
 
     def point_in_polygon(self, point, polygon):
-        """Проверяет, находится ли точка внутри многоугольника"""
         x, y = point
         inside = False
         n = len(polygon)
