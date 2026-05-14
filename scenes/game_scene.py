@@ -3,7 +3,10 @@ from core.player import Player
 from components.health_bar import HealthBar
 from enemies.enemy_manager import EnemyManager
 from stages.stage_manager import StageManager
-from settings import EXIT_LOCK_MESSAGE_TIME, HEIGHT, PLAYER_SPAWN_DISTANCE_FROM_EXIT, WIDTH
+from settings import (
+    EXIT_LOCK_MESSAGE_TIME, HEIGHT, PLAYER_ATTACK_DAMAGE, PLAYER_ATTACK_RANGE,
+    PLAYER_ATTACK_WIDTH, PLAYER_SPAWN_DISTANCE_FROM_EXIT, WIDTH
+)
 
 
 class GameScene:
@@ -44,6 +47,37 @@ class GameScene:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     self.game.change_scene("menu")
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    self._handle_player_attack(event.pos)
+
+    def _handle_player_attack(self, mouse_pos):
+        if not self.player or not self.enemy_manager or self.stage_manager.is_transitioning():
+            return
+
+        if self.player.start_attack(mouse_pos):
+            attack_rect = self._get_player_attack_rect()
+            self.enemy_manager.attack_enemies(attack_rect, PLAYER_ATTACK_DAMAGE)
+
+    def _get_player_attack_rect(self):
+        player_rect = self.player.get_collision_rect()
+        attack_height = PLAYER_ATTACK_WIDTH
+
+        if self.player.direction == 'left':
+            return pygame.Rect(
+                player_rect.centerx - PLAYER_ATTACK_RANGE,
+                player_rect.centery - attack_height // 2,
+                PLAYER_ATTACK_RANGE,
+                attack_height
+            )
+
+        return pygame.Rect(
+            player_rect.centerx,
+            player_rect.centery - attack_height // 2,
+            PLAYER_ATTACK_RANGE,
+            attack_height
+        )
 
     def _handle_collisions(self, dt):
         if not self.player:

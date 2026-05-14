@@ -10,6 +10,7 @@ from settings import (
     ENEMY_SIZE,
     ENEMY_NEXT_WAVE_THRESHOLD,
     ENEMY_SPAWN_PADDING,
+    ENEMY_MIN_DISTANCE_FROM_PLAYER_SPAWN,
     ENEMY_WAVE_COUNT,
     ENEMY_WAVE_SIZE,
 )
@@ -59,6 +60,17 @@ class EnemyManager:
 
     def has_alive_enemies(self):
         return any(enemy.is_alive() for enemy in self.enemies)
+
+    def attack_enemies(self, attack_rect, damage):
+        hit_count = 0
+
+        for enemy in self.enemies:
+            if enemy.is_alive() and attack_rect.colliderect(enemy.get_collision_rect()):
+                enemy.take_damage(damage)
+                hit_count += 1
+
+        self.enemies = [enemy for enemy in self.enemies if enemy.is_alive()]
+        return hit_count
 
     def is_stage_cleared(self):
         return self.current_wave_index >= self.wave_count - 1 and not self.has_alive_enemies()
@@ -115,6 +127,11 @@ class EnemyManager:
             return False
 
         if enemy_rect.colliderect(self.player.get_collision_rect()):
+            return False
+
+        spawn_pos = self.stage.player_spawn
+        spawn_distance = enemy.position.distance_to(spawn_pos)
+        if spawn_distance < ENEMY_MIN_DISTANCE_FROM_PLAYER_SPAWN:
             return False
 
         for rect in self._get_blocking_rects():
