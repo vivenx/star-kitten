@@ -9,15 +9,18 @@ from settings import (
     ENEMY_COLLISION_WIDTH_RATIO,
     ENEMY_COLLISION_HEIGHT_RATIO,
     ENEMY_DAMAGE,
+    ENEMY_DAMAGE_SCALE,
+    ENEMY_HP_SCALE,
     ENEMY_MAX_HP,
     ENEMY_PATH_UPDATE_TIME,
     ENEMY_SIZE,
     ENEMY_SPEED,
+    ENEMY_SPEED_SCALE,
 )
 
 
 class Enemy(pygame.sprite.Sprite):
-    def __init__(self, x, y):
+    def __init__(self, x, y, difficulty_multiplier=1.0):
         super().__init__()
 
         self.sprites = {
@@ -60,10 +63,11 @@ class Enemy(pygame.sprite.Sprite):
         self.velocity = pygame.Vector2(0, 0)
         self.is_moving = False
 
-        self.max_hp = ENEMY_MAX_HP
+        difficulty_bonus = max(0.0, difficulty_multiplier - 1.0)
+        self.max_hp = int(ENEMY_MAX_HP * (1.0 + difficulty_bonus * ENEMY_HP_SCALE))
         self.current_hp = self.max_hp
-        self.damage = ENEMY_DAMAGE
-        self.speed = ENEMY_SPEED
+        self.damage = int(ENEMY_DAMAGE * (1.0 + difficulty_bonus * ENEMY_DAMAGE_SCALE))
+        self.speed = ENEMY_SPEED * (1.0 + difficulty_bonus * ENEMY_SPEED_SCALE)
         self.attack_cooldown = 0.0
         self.attack_cooldown_max = ENEMY_ATTACK_COOLDOWN
 

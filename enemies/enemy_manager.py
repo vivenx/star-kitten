@@ -13,17 +13,20 @@ from settings import (
     ENEMY_MIN_DISTANCE_FROM_PLAYER_SPAWN,
     ENEMY_WAVE_COUNT,
     ENEMY_WAVE_SIZE,
+    ENEMY_COUNT_PER_ARENA,
 )
 
 
 class EnemyManager:
-    def __init__(self, stage, player):
+    def __init__(self, stage, player, difficulty_multiplier=1.0, arena_index=0):
         self.stage = stage
         self.player = player
+        self.difficulty_multiplier = difficulty_multiplier
+        self.arena_index = arena_index
         self.enemies = []
         self.pathfinder = self._create_pathfinder(stage)
         self.max_enemies = ENEMY_MAX_COUNT
-        self.wave_size = ENEMY_WAVE_SIZE
+        self.wave_size = self._get_scaled_wave_size()
         self.wave_count = ENEMY_WAVE_COUNT
         self.next_wave_threshold = ENEMY_NEXT_WAVE_THRESHOLD
         self.current_wave_index = -1
@@ -31,11 +34,14 @@ class EnemyManager:
 
         self.spawn_wave()
 
-    def reset_stage(self, stage, player):
+    def reset_stage(self, stage, player, difficulty_multiplier=1.0, arena_index=0):
         self.stage = stage
         self.player = player
+        self.difficulty_multiplier = difficulty_multiplier
+        self.arena_index = arena_index
         self.enemies = []
         self.pathfinder = self._create_pathfinder(stage)
+        self.wave_size = self._get_scaled_wave_size()
         self.current_wave_index = -1
         self.spawned_enemies = 0
 
@@ -72,6 +78,18 @@ class EnemyManager:
         self.enemies = [enemy for enemy in self.enemies if enemy.is_alive()]
         return hit_count
 
+    def damage_enemies(self, attack_rect, damage):
+        defeated_positions = []
+
+        for enemy in self.enemies:
+            if enemy.is_alive() and attack_rect.colliderect(enemy.get_collision_rect()):
+                died = enemy.take_damage(damage)
+                if died:
+                    defeated_positions.append(enemy.get_collision_rect().center)
+
+        self.enemies = [enemy for enemy in self.enemies if enemy.is_alive()]
+        return defeated_positions
+
     def is_stage_cleared(self):
         return self.current_wave_index >= self.wave_count - 1 and not self.has_alive_enemies()
 
@@ -91,7 +109,7 @@ class EnemyManager:
     def spawn_enemy(self, wave_index):
         for _ in range(80):
             x, y = self._get_border_spawn_position()
-            enemy = Enemy(x, y)
+            enemy = Enemy(x, y, self.difficulty_multiplier)
 
             if self._can_spawn(enemy):
                 enemy.wave_index = wave_index
@@ -171,3 +189,6 @@ class EnemyManager:
             int(ENEMY_SIZE[1] * ENEMY_COLLISION_HEIGHT_RATIO)
         )
         return Pathfinder(stage, agent_size=agent_size)
+
+    def _get_scaled_wave_size(self):
+        return int(ENEMY_WAVE_SIZE + self.arena_index * ENEMY_COUNT_PER_ARENA)

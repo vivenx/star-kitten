@@ -52,7 +52,7 @@ class Obstacle:
             surface.blit(self.image, self.rect)
         else:
 
-            color = COLOR_FOREST_INFECTED if "cristal" in self.prefix else COLOR_FOREST_NORMAL
+            color = COLOR_FOREST_INFECTED if "crystal" in self.prefix else COLOR_FOREST_NORMAL
             pygame.draw.rect(surface, color, self.rect)
 
     def deals_damage(self):

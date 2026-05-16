@@ -3,7 +3,9 @@ import os
 import re
 from settings import (
     PLAYER_SPEED, PLAYER_MAX_HP, PLAYER_SIZE, PLAYER_COLLISION_HEIGHT_RATIO,
-    PLAYER_ATTACK_COOLDOWN, DAMAGE_COOLDOWN_DEFAULT, COLOR_DAMAGE_FLASH
+    PLAYER_ATTACK_COOLDOWN, DAMAGE_COOLDOWN_DEFAULT, COLOR_DAMAGE_FLASH,
+    PLAYER_ATTACK_DAMAGE, BASE_REQUIRED_XP, XP_PER_LEVEL,
+    HP_PER_LEVEL, DAMAGE_PER_LEVEL
 )
 
 
@@ -74,6 +76,9 @@ class Player(pygame.sprite.Sprite):
 
         self.max_hp = PLAYER_MAX_HP
         self.hp = self.max_hp
+        self.attack_damage = PLAYER_ATTACK_DAMAGE
+        self.level = 1
+        self.xp = 0
 
 
         self.damage_cooldown = 0.0
@@ -162,6 +167,29 @@ class Player(pygame.sprite.Sprite):
         self.hp += amount
         if self.hp > self.max_hp:
             self.hp = self.max_hp
+
+    def get_required_xp(self):
+        return BASE_REQUIRED_XP + self.level * XP_PER_LEVEL
+
+    def add_xp(self, amount):
+        if amount <= 0:
+            return 0
+
+        levels_gained = 0
+        self.xp += amount
+
+        while self.xp >= self.get_required_xp():
+            self.xp -= self.get_required_xp()
+            self.level_up()
+            levels_gained += 1
+
+        return levels_gained
+
+    def level_up(self):
+        self.level += 1
+        self.max_hp += HP_PER_LEVEL
+        self.attack_damage += DAMAGE_PER_LEVEL
+        self.hp = self.max_hp
 
     def is_alive(self):
         return self.hp > 0

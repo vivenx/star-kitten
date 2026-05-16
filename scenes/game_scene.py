@@ -1,10 +1,12 @@
 import pygame
 from core.player import Player
 from components.health_bar import HealthBar
+from components.xp_bar import XPBar
+from components.xp_orb import XPOrb
 from enemies.enemy_manager import EnemyManager
 from stages.stage_manager import StageManager
 from settings import (
-    EXIT_LOCK_MESSAGE_TIME, HEIGHT, PLAYER_ATTACK_DAMAGE, PLAYER_ATTACK_RANGE,
+    EXIT_LOCK_MESSAGE_TIME, HEIGHT, PLAYER_ATTACK_RANGE,
     PLAYER_ATTACK_WIDTH, PLAYER_SPAWN_DISTANCE_FROM_EXIT, WIDTH
 )
 
@@ -16,6 +18,8 @@ class GameScene:
         self.health_bar = None
         self.stage_manager = None
         self.enemy_manager = None
+        self.xp_bar = None
+        self.xp_orbs = []
         self.current_stage_index = 0
         self.exit_message = "Уничтожьте всех врагов"
         self.exit_message_timer = 0.0
@@ -24,6 +28,7 @@ class GameScene:
         self._setup_stage_manager()
         self._create_player()
         self._create_health_bar()
+        self._create_xp_bar()
         self._create_enemy_manager()
 
     def _setup_stage_manager(self):
@@ -36,8 +41,16 @@ class GameScene:
     def _create_health_bar(self):
         self.health_bar = HealthBar(10, 10)
 
+    def _create_xp_bar(self):
+        self.xp_bar = XPBar(42, 116)
+
     def _create_enemy_manager(self):
-        self.enemy_manager = EnemyManager(self.stage_manager.current_stage, self.player)
+        self.enemy_manager = EnemyManager(
+            self.stage_manager.current_stage,
+            self.player,
+            self.stage_manager.difficulty_multiplier,
+            self.stage_manager.current_stage_index
+        )
 
     def handle_events(self):
         for event in pygame.event.get():
@@ -58,7 +71,12 @@ class GameScene:
 
         if self.player.start_attack(mouse_pos):
             attack_rect = self._get_player_attack_rect()
-            self.enemy_manager.attack_enemies(attack_rect, PLAYER_ATTACK_DAMAGE)
+            defeated_positions = self.enemy_manager.damage_enemies(attack_rect, self.player.attack_damage)
+            self._spawn_xp_orbs(defeated_positions)
+
+    def _spawn_xp_orbs(self, positions):
+        for position in positions:
+            self.xp_orbs.append(XPOrb(position[0], position[1]))
 
     def _get_player_attack_rect(self):
         player_rect = self.player.get_collision_rect()
@@ -157,6 +175,8 @@ class GameScene:
 
         self.player._update_collision_rect()
 
+        self._handle_xp_orb_pickups()
+
 
         damaging_obstacles = current_stage.get_damaging_obstacles()
         player_collision_rect = self.player.get_collision_rect()
@@ -173,8 +193,27 @@ class GameScene:
         spawn_pos = self.stage_manager.current_stage.player_spawn
         self.player.set_position(spawn_pos.x, spawn_pos.y)
         self.player.hp = self.player.max_hp
+        self.xp_orbs = []
         if self.enemy_manager:
-            self.enemy_manager.reset_stage(self.stage_manager.current_stage, self.player)
+            self.enemy_manager.reset_stage(
+                self.stage_manager.current_stage,
+                self.player,
+                self.stage_manager.difficulty_multiplier,
+                self.stage_manager.current_stage_index
+            )
+
+    def _handle_xp_orb_pickups(self):
+        if not self.player or not self.xp_orbs:
+            return
+
+        remaining_orbs = []
+        for orb in self.xp_orbs:
+            if orb.can_be_picked_up_by(self.player):
+                self.player.add_xp(orb.value)
+            else:
+                remaining_orbs.append(orb)
+
+        self.xp_orbs = remaining_orbs
 
     def _check_exit_zone(self):
         if not self.player or not self.stage_manager:
@@ -207,7 +246,6 @@ class GameScene:
             if self.exit_message_timer < 0:
                 self.exit_message_timer = 0
 
-
         if self.player and not self.stage_manager.is_transitioning():
             keys = pygame.key.get_pressed()
             dx = 0
@@ -225,6 +263,10 @@ class GameScene:
             self.player.move(dx, dy, dt)
             self.player.update(dt)
             self.player.update_cooldown(dt)
+            if self.xp_bar:
+                self.xp_bar.update(dt, self.player)
+            for orb in self.xp_orbs:
+                orb.update(dt)
 
 
             self._handle_collisions(dt)
@@ -239,8 +281,14 @@ class GameScene:
 
         if self.stage_manager.current_stage_index != self.current_stage_index:
             self.current_stage_index = self.stage_manager.current_stage_index
+            self.xp_orbs = []
             if self.enemy_manager:
-                self.enemy_manager.reset_stage(self.stage_manager.current_stage, self.player)
+                self.enemy_manager.reset_stage(
+                    self.stage_manager.current_stage,
+                    self.player,
+                    self.stage_manager.difficulty_multiplier,
+                    self.stage_manager.current_stage_index
+                )
 
     def draw(self):
 
@@ -249,6 +297,9 @@ class GameScene:
 
 
         if self.player:
+            for orb in self.xp_orbs:
+                orb.draw(self.game.screen)
+
             if self.enemy_manager:
                 self.enemy_manager.draw(self.game.screen)
 
@@ -260,6 +311,9 @@ class GameScene:
     def _draw_ui(self):
         if self.health_bar and self.player:
             self.health_bar.draw(self.game.screen, self.player.hp, self.player.max_hp)
+
+        if self.xp_bar and self.player:
+            self.xp_bar.draw(self.game.screen, self.player)
 
         if self.exit_message_timer > 0:
             self._draw_exit_message()
