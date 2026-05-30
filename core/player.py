@@ -185,6 +185,24 @@ class Player(pygame.sprite.Sprite):
 
         return levels_gained
 
+    def get_progress_snapshot(self):
+        return {
+            "level": self.level,
+            "xp": self.xp,
+            "max_hp": self.max_hp,
+            "attack_damage": self.attack_damage,
+        }
+
+    def restore_progress_snapshot(self, snapshot):
+        if not snapshot:
+            return
+
+        self.level = snapshot["level"]
+        self.xp = snapshot["xp"]
+        self.max_hp = snapshot["max_hp"]
+        self.attack_damage = snapshot["attack_damage"]
+        self.hp = min(self.hp, self.max_hp)
+
     def level_up(self):
         self.level += 1
         self.max_hp += HP_PER_LEVEL

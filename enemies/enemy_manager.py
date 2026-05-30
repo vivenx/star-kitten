@@ -31,6 +31,7 @@ class EnemyManager:
         self.next_wave_threshold = ENEMY_NEXT_WAVE_THRESHOLD
         self.current_wave_index = -1
         self.spawned_enemies = 0
+        self.damage_number_events = []
 
         self.spawn_wave()
 
@@ -44,6 +45,7 @@ class EnemyManager:
         self.wave_size = self._get_scaled_wave_size()
         self.current_wave_index = -1
         self.spawned_enemies = 0
+        self.damage_number_events = []
 
         self.spawn_wave()
 
@@ -52,7 +54,15 @@ class EnemyManager:
         solid_rects = self._get_blocking_rects()
 
         for enemy in self.enemies:
+            hp_before = self.player.hp
             player_died = enemy.update(dt, self.player, self.pathfinder, solid_rects, self.enemies) or player_died
+            damage_dealt = hp_before - self.player.hp
+            if damage_dealt > 0:
+                self.damage_number_events.append({
+                    "amount": damage_dealt,
+                    "position": self.player.get_collision_rect().center,
+                    "target": "player",
+                })
 
         self.enemies = [enemy for enemy in self.enemies if enemy.is_alive()]
         if self._should_spawn_next_wave():
@@ -84,11 +94,21 @@ class EnemyManager:
         for enemy in self.enemies:
             if enemy.is_alive() and attack_rect.colliderect(enemy.get_collision_rect()):
                 died = enemy.take_damage(damage)
+                self.damage_number_events.append({
+                    "amount": damage,
+                    "position": enemy.get_collision_rect().center,
+                    "target": "enemy",
+                })
                 if died:
                     defeated_positions.append(enemy.get_collision_rect().center)
 
         self.enemies = [enemy for enemy in self.enemies if enemy.is_alive()]
         return defeated_positions
+
+    def consume_damage_number_events(self):
+        events = self.damage_number_events
+        self.damage_number_events = []
+        return events
 
     def is_stage_cleared(self):
         return self.current_wave_index >= self.wave_count - 1 and not self.has_alive_enemies()

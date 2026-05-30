@@ -1,11 +1,13 @@
 import pygame
 from core.player import Player
 from components.health_bar import HealthBar
+from components.visual_effects import DamageNumber, StageClearMessage
 from components.xp_bar import XPBar
 from components.xp_orb import XPOrb
 from enemies.enemy_manager import EnemyManager
 from stages.stage_manager import StageManager
 from settings import (
+    DAMAGE_NUMBER_ENEMY_HIT_COLOR, DAMAGE_NUMBER_PLAYER_HIT_COLOR,
     EXIT_LOCK_MESSAGE_TIME, HEIGHT, PLAYER_ATTACK_RANGE,
     PLAYER_ATTACK_WIDTH, PLAYER_SPAWN_DISTANCE_FROM_EXIT, WIDTH
 )
@@ -20,7 +22,11 @@ class GameScene:
         self.enemy_manager = None
         self.xp_bar = None
         self.xp_orbs = []
+        self.damage_numbers = []
         self.current_stage_index = 0
+        self.stage_start_progress = None
+        self.stage_cleared = False
+        self.stage_clear_message = StageClearMessage()
         self.exit_message = "Уничтожьте всех врагов"
         self.exit_message_timer = 0.0
         self.exit_message_font = pygame.font.Font(None, 48)
@@ -30,6 +36,7 @@ class GameScene:
         self._create_health_bar()
         self._create_xp_bar()
         self._create_enemy_manager()
+        self._save_stage_start_progress()
 
     def _setup_stage_manager(self):
         self.stage_manager = StageManager()
@@ -52,6 +59,10 @@ class GameScene:
             self.stage_manager.current_stage_index
         )
 
+    def _save_stage_start_progress(self):
+        if self.player:
+            self.stage_start_progress = self.player.get_progress_snapshot()
+
     def handle_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -73,6 +84,8 @@ class GameScene:
             attack_rect = self._get_player_attack_rect()
             defeated_positions = self.enemy_manager.damage_enemies(attack_rect, self.player.attack_damage)
             self._spawn_xp_orbs(defeated_positions)
+            self._spawn_damage_numbers_from_events()
+            self._update_stage_clear_state()
 
     def _spawn_xp_orbs(self, positions):
         for position in positions:
@@ -191,9 +204,13 @@ class GameScene:
     def _on_player_death(self):
 
         spawn_pos = self.stage_manager.current_stage.player_spawn
+        self.player.restore_progress_snapshot(self.stage_start_progress)
         self.player.set_position(spawn_pos.x, spawn_pos.y)
         self.player.hp = self.player.max_hp
         self.xp_orbs = []
+        self.damage_numbers = []
+        self.stage_cleared = False
+        self.stage_clear_message.reset()
         if self.enemy_manager:
             self.enemy_manager.reset_stage(
                 self.stage_manager.current_stage,
@@ -214,6 +231,27 @@ class GameScene:
                 remaining_orbs.append(orb)
 
         self.xp_orbs = remaining_orbs
+
+    def _spawn_damage_numbers_from_events(self):
+        if not self.enemy_manager:
+            return
+
+        for event in self.enemy_manager.consume_damage_number_events():
+            color = (
+                DAMAGE_NUMBER_PLAYER_HIT_COLOR
+                if event["target"] == "player"
+                else DAMAGE_NUMBER_ENEMY_HIT_COLOR
+            )
+            position = event["position"]
+            self.damage_numbers.append(DamageNumber(position[0], position[1], event["amount"], color))
+
+    def _update_stage_clear_state(self):
+        if self.stage_cleared or not self.enemy_manager:
+            return
+
+        if self.enemy_manager.is_stage_cleared():
+            self.stage_cleared = True
+            self.stage_clear_message.show()
 
     def _check_exit_zone(self):
         if not self.player or not self.stage_manager:
@@ -246,6 +284,8 @@ class GameScene:
             if self.exit_message_timer < 0:
                 self.exit_message_timer = 0
 
+        self.stage_clear_message.update(dt)
+
         if self.player and not self.stage_manager.is_transitioning():
             keys = pygame.key.get_pressed()
             dx = 0
@@ -267,6 +307,9 @@ class GameScene:
                 self.xp_bar.update(dt, self.player)
             for orb in self.xp_orbs:
                 orb.update(dt)
+            for number in self.damage_numbers:
+                number.update(dt)
+            self.damage_numbers = [number for number in self.damage_numbers if number.is_alive()]
 
 
             self._handle_collisions(dt)
@@ -275,6 +318,9 @@ class GameScene:
                 player_died = self.enemy_manager.update(dt)
                 if player_died or not self.player.is_alive():
                     self._on_player_death()
+                else:
+                    self._spawn_damage_numbers_from_events()
+                    self._update_stage_clear_state()
 
 
             self._check_exit_zone()
@@ -282,6 +328,9 @@ class GameScene:
         if self.stage_manager.current_stage_index != self.current_stage_index:
             self.current_stage_index = self.stage_manager.current_stage_index
             self.xp_orbs = []
+            self.damage_numbers = []
+            self.stage_cleared = False
+            self.stage_clear_message.reset()
             if self.enemy_manager:
                 self.enemy_manager.reset_stage(
                     self.stage_manager.current_stage,
@@ -289,6 +338,7 @@ class GameScene:
                     self.stage_manager.difficulty_multiplier,
                     self.stage_manager.current_stage_index
                 )
+            self._save_stage_start_progress()
 
     def draw(self):
 
@@ -304,6 +354,8 @@ class GameScene:
                 self.enemy_manager.draw(self.game.screen)
 
             self.game.screen.blit(self.player.image, self.player.rect)
+            for number in self.damage_numbers:
+                number.draw(self.game.screen)
 
 
             self._draw_ui()
@@ -314,6 +366,8 @@ class GameScene:
 
         if self.xp_bar and self.player:
             self.xp_bar.draw(self.game.screen, self.player)
+
+        self.stage_clear_message.draw(self.game.screen)
 
         if self.exit_message_timer > 0:
             self._draw_exit_message()
