@@ -1,6 +1,7 @@
 import pygame
 from core.player import Player
 from components.health_bar import HealthBar
+from components.skill_tree_ui import SkillTreeUI
 from components.visual_effects import DamageNumber, StageClearMessage
 from components.xp_bar import XPBar
 from components.xp_orb import XPOrb
@@ -30,6 +31,8 @@ class GameScene:
         self.exit_message = "Уничтожьте всех врагов"
         self.exit_message_timer = 0.0
         self.exit_message_font = pygame.font.Font(None, 48)
+        self.skill_tree_open = False
+        self.skill_tree_ui = SkillTreeUI()
 
         self._setup_stage_manager()
         self._create_player()
@@ -69,8 +72,14 @@ class GameScene:
                 self.game.running = False
 
             if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_z:
+                    self.skill_tree_open = not self.skill_tree_open
+                    continue
                 if event.key == pygame.K_ESCAPE:
                     self.game.change_scene("menu")
+
+            if self.skill_tree_open:
+                continue
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
@@ -273,6 +282,9 @@ class GameScene:
                 self.stage_manager.start_transition(self.player)
 
     def update(self):
+        if self.skill_tree_open:
+            return
+
         dt = self.game.clock.get_time() / 1000.0
 
 
@@ -359,6 +371,9 @@ class GameScene:
 
 
             self._draw_ui()
+
+        if self.skill_tree_open:
+            self.skill_tree_ui.draw(self.game.screen)
 
     def _draw_ui(self):
         if self.health_bar and self.player:
