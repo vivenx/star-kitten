@@ -79,11 +79,7 @@ class PlayerCollisionSystem:
 
     def _get_player_collision_mask(self, player, collision_rect):
         collision_surface = pygame.Surface(collision_rect.size, pygame.SRCALPHA)
-        collision_y = player.rect.height - collision_rect.height
-        collision_surface.blit(
-            player.image,
-            (0, -collision_y)
-        )
+        collision_surface.fill((255, 255, 255, 255))
         return pygame.mask.from_surface(collision_surface)
 
     def _collides_with_obstacles(self, test_rect, test_mask, solid_obstacles):

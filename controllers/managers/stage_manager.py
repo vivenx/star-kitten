@@ -1,6 +1,4 @@
 from models.stage import Stage
-from views.transitions.fader import Fader
-from views.transitions.stage_title import StageTitle
 from settings import (
     ARENA_COUNT,
     COLOR_FOREST_NORMAL, COLOR_FOREST_INFECTED, COLOR_FOREST_BOSS,
@@ -13,11 +11,12 @@ class StageManager:
     def __init__(self):
         self.stages = []
         self.current_stage_index = 0
-        self.fader = Fader()
-        self.stage_title = StageTitle()
+        self.transition_phase = "idle"
+        self._player_ref = None
+        self.stage_title_events = []
         self.stage_configs = []
         self._setup_stages()
-        self._show_stage_intro()
+        self._queue_stage_intro()
 
     def _setup_stages(self):
         self.stage_configs = [
@@ -67,49 +66,53 @@ class StageManager:
         return True
 
     def start_transition(self, player_ref=None):
-        if not self.has_next_stage:
+        if not self.has_next_stage or self.is_transitioning():
             return False
 
         self._player_ref = player_ref
-        self._show_stage_outro()
-        self.fader.start_fade_out(callback=lambda: self._on_fade_out_complete(self._player_ref))
+        self.transition_phase = "fading_out"
+        self._queue_stage_outro()
         return True
 
-    def _on_fade_out_complete(self, player_ref):
+    def complete_fade_out(self):
+        if self.transition_phase != "fading_out":
+            return False
+
         self.load_next_stage()
 
         spawn_pos = self.current_stage.player_spawn
-        if player_ref:
-            player_ref.set_position(spawn_pos.x, spawn_pos.y)
-        self._show_stage_intro()
-        self.fader.start_fade_in()
+        if self._player_ref:
+            self._player_ref.set_position(spawn_pos.x, spawn_pos.y)
+        self.transition_phase = "fading_in"
+        self._queue_stage_intro()
+        return True
+
+    def complete_fade_in(self):
+        if self.transition_phase != "fading_in":
+            return False
+
+        self.transition_phase = "idle"
+        self._player_ref = None
+        return True
 
     def update(self, dt):
-        self.fader.update(dt)
-        self.stage_title.update(dt)
         self.current_stage.update(dt)
 
-    def draw(self, surface):
-        self.current_stage.draw(surface)
-        self.draw_overlays(surface)
-
-    def draw_background(self, surface):
-        self.current_stage.draw_background(surface)
-
-    def draw_overlays(self, surface):
-        self.fader.draw(surface)
-        self.stage_title.draw(surface)
-
     def is_transitioning(self):
-        return self.fader.is_transitioning()
+        return self.transition_phase != "idle"
 
     def can_enter_exit_zone(self):
         return not self.is_transitioning()
 
-    def _show_stage_intro(self):
-        arena_number = self.current_stage_index + 1
-        self.stage_title.show(self.current_stage.name, f"Этап {arena_number}")
+    def consume_stage_title_events(self):
+        events = self.stage_title_events
+        self.stage_title_events = []
+        return events
 
-    def _show_stage_outro(self):
+    def _queue_stage_intro(self):
         arena_number = self.current_stage_index + 1
-        self.stage_title.show("Этап пройден", f"Этап {arena_number}")
+        self.stage_title_events.append((self.current_stage.name, f"Этап {arena_number}"))
+
+    def _queue_stage_outro(self):
+        arena_number = self.current_stage_index + 1
+        self.stage_title_events.append(("Этап пройден", f"Этап {arena_number}"))

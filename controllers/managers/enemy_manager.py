@@ -77,10 +77,6 @@ class EnemyManager:
 
         return player_died
 
-    def draw(self, surface):
-        for enemy in self.enemies:
-            enemy.draw(surface)
-
     def has_alive_enemies(self):
         return any(enemy.is_alive() for enemy in self.enemies)
 

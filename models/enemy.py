@@ -1,6 +1,4 @@
-import os
 import random
-import re
 
 import pygame
 
@@ -23,39 +21,11 @@ class Enemy(pygame.sprite.Sprite):
     def __init__(self, x, y, difficulty_multiplier=1.0):
         super().__init__()
 
-        self.sprites = {
-            "right": [],
-            "left": [],
-        }
-        self.damage_sprites = {
-            "right": [],
-            "left": [],
-        }
-        self.attack_sprites = {
-            "right": [],
-            "left": [],
-        }
-        self._load_sprites()
-
         self.direction = "left"
-        self.current_frame = 0
-        self.animation_speed = 8
-        self.animation_counter = random.uniform(0, self.animation_speed)
-        self.damage_animation_speed = 5
-        self.damage_frame = 0
-        self.damage_animation_counter = 0
-        self.damage_animation_timer = 0.0
-        self.damage_animation_duration = 0.25
-        self.is_damage_animating = False
-        self.attack_animation_speed = 5
-        self.attack_frame = 0
-        self.attack_animation_counter = 0
-        self.attack_animation_timer = 0.0
-        self.attack_animation_duration = 0.25
-        self.is_attack_animating = False
+        self.visual_action = None
+        self.visual_action_id = 0
 
-        self.image = self.sprites[self.direction][self.current_frame]
-        self.rect = self.image.get_rect()
+        self.rect = pygame.Rect(0, 0, ENEMY_SIZE[0], ENEMY_SIZE[1])
         self.rect.x = x
         self.rect.y = y
 
@@ -80,52 +50,6 @@ class Enemy(pygame.sprite.Sprite):
         self.collision_width_ratio = ENEMY_COLLISION_WIDTH_RATIO
         self._update_collision_rect()
 
-    def _load_sprites(self):
-        base_path = "assets/images/forest/enemies/skeleton"
-
-        self.sprites["right"] = self._load_animation(os.path.join(base_path, "right", "walk"))
-        self.sprites["left"] = self._load_animation(os.path.join(base_path, "left", "walk"))
-        self.damage_sprites["right"] = self._load_animation(os.path.join(base_path, "right", "damage"))
-        self.damage_sprites["left"] = self._load_animation(os.path.join(base_path, "left", "damage"))
-        self.attack_sprites["right"] = self._load_animation(os.path.join(base_path, "right", "attack"))
-        self.attack_sprites["left"] = self._load_animation(os.path.join(base_path, "left", "attack"))
-
-        if not self.damage_sprites["right"]:
-            self.damage_sprites["right"] = [self.sprites["right"][0]]
-        if not self.damage_sprites["left"]:
-            self.damage_sprites["left"] = [self.sprites["left"][0]]
-        if not self.attack_sprites["right"]:
-            self.attack_sprites["right"] = [self.sprites["right"][0]]
-        if not self.attack_sprites["left"]:
-            self.attack_sprites["left"] = [self.sprites["left"][0]]
-
-    def _load_animation(self, folder_path):
-        files = [
-            file_name
-            for file_name in os.listdir(folder_path)
-            if file_name.lower().endswith(".png")
-        ]
-        files.sort(key=lambda file_name: (
-            self._get_frame_number(file_name)
-            if self._get_frame_number(file_name) is not None
-            else 0,
-            file_name
-        ))
-
-        return [
-            pygame.transform.scale(
-                pygame.image.load(os.path.join(folder_path, file_name)).convert_alpha(),
-                ENEMY_SIZE
-            )
-            for file_name in files
-        ]
-
-    def _get_frame_number(self, file_name):
-        match = re.search(r"\((\d+)\)|(\d+)", file_name)
-        if not match:
-            return None
-        return int(match.group(1) or match.group(2))
-
     def update(self, dt, player, pathfinder, solid_rects, enemies, play_area=None):
         if not self.is_alive():
             return False
@@ -134,24 +58,19 @@ class Enemy(pygame.sprite.Sprite):
         self._update_path(dt, player, pathfinder)
         self._move_along_path(dt, solid_rects, enemies, play_area)
         player_died = self._attack_player(player)
-        self._update_animation(dt)
         self._sync_rect()
         return player_died
 
     def take_damage(self, damage):
         self.current_hp -= damage
-        self.start_damage_animation()
+        self.request_damage_visual()
         if self.current_hp <= 0:
             self.current_hp = 0
             return True
         return False
 
-    def start_damage_animation(self):
-        self.is_damage_animating = True
-        self.damage_frame = 0
-        self.damage_animation_counter = 0
-        self.damage_animation_timer = self.damage_animation_duration
-        self.image = self.damage_sprites[self.direction][self.damage_frame]
+    def request_damage_visual(self):
+        self._request_visual_action("damage")
 
     def is_alive(self):
         return self.current_hp > 0
@@ -159,10 +78,6 @@ class Enemy(pygame.sprite.Sprite):
     def get_collision_rect(self):
         self._update_collision_rect()
         return self.collision_rect
-
-    def draw(self, surface):
-        surface.blit(self.image, self.rect)
-        self._draw_health_bar(surface)
 
     def _update_path(self, dt, player, pathfinder):
         self.path_update_timer -= dt
@@ -252,20 +167,16 @@ class Enemy(pygame.sprite.Sprite):
         died = player.take_damage(self.damage)
         player.start_damage_cooldown()
         self.attack_cooldown = self.attack_cooldown_max
-        self.start_attack_animation(player)
+        self.request_attack_visual(player)
         return died
 
-    def start_attack_animation(self, player):
+    def request_attack_visual(self, player):
         if player.get_collision_rect().centerx < self.get_collision_rect().centerx:
             self.direction = "left"
         else:
             self.direction = "right"
 
-        self.is_attack_animating = True
-        self.attack_frame = 0
-        self.attack_animation_counter = 0
-        self.attack_animation_timer = self.attack_animation_duration
-        self.image = self.attack_sprites[self.direction][self.attack_frame]
+        self._request_visual_action("attack")
 
     def _update_attack_cooldown(self, dt):
         if self.attack_cooldown > 0:
@@ -273,51 +184,14 @@ class Enemy(pygame.sprite.Sprite):
             if self.attack_cooldown < 0:
                 self.attack_cooldown = 0
 
-    def _update_animation(self, dt):
-        if self.is_damage_animating:
-            self.damage_animation_timer -= dt
-            self.damage_animation_counter += dt * 60
-            if self.damage_animation_counter >= self.damage_animation_speed:
-                self.damage_animation_counter = 0
-                self.damage_frame = (self.damage_frame + 1) % len(self.damage_sprites[self.direction])
-
-            if self.damage_animation_timer <= 0:
-                self.damage_frame = 0
-                self.is_damage_animating = False
-
-            if self.is_damage_animating:
-                self.image = self.damage_sprites[self.direction][self.damage_frame]
-                return
-
-        if self.is_attack_animating:
-            self.attack_animation_timer -= dt
-            self.attack_animation_counter += dt * 60
-            if self.attack_animation_counter >= self.attack_animation_speed:
-                self.attack_animation_counter = 0
-                self.attack_frame = (self.attack_frame + 1) % len(self.attack_sprites[self.direction])
-
-            if self.attack_animation_timer <= 0:
-                self.attack_frame = 0
-                self.is_attack_animating = False
-
-            if self.is_attack_animating:
-                self.image = self.attack_sprites[self.direction][self.attack_frame]
-                return
-
-        if self.is_moving:
-            self.animation_counter += dt * 60
-            if self.animation_counter >= self.animation_speed:
-                self.animation_counter = 0
-                self.current_frame = (self.current_frame + 1) % len(self.sprites[self.direction])
-        else:
-            self.current_frame = 0
-
-        self.image = self.sprites[self.direction][self.current_frame]
-
     def _sync_rect(self):
         self.rect.x = int(self.position.x)
         self.rect.y = int(self.position.y)
         self._update_collision_rect()
+
+    def _request_visual_action(self, action):
+        self.visual_action = action
+        self.visual_action_id += 1
 
     def _update_collision_rect(self):
         collision_width = int(self.rect.width * self.collision_width_ratio)
@@ -331,15 +205,3 @@ class Enemy(pygame.sprite.Sprite):
             collision_height
         )
 
-    def _draw_health_bar(self, surface):
-        if self.current_hp >= self.max_hp:
-            return
-
-        bar_width = self.rect.width
-        bar_height = 5
-        x = self.rect.left
-        y = self.rect.top - 8
-        hp_percent = self.current_hp / self.max_hp
-
-        pygame.draw.rect(surface, (60, 20, 20), (x, y, bar_width, bar_height))
-        pygame.draw.rect(surface, (180, 40, 40), (x, y, int(bar_width * hp_percent), bar_height))

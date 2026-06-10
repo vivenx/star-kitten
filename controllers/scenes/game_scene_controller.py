@@ -5,9 +5,10 @@ from settings import DAMAGE_NUMBER_ENEMY_HIT_COLOR, DAMAGE_NUMBER_PLAYER_HIT_COL
 
 
 class GameSceneController:
-    def __init__(self, game, model):
+    def __init__(self, game, model, view):
         self.game = game
         self.model = model
+        self.view = view
 
     def handle_events(self):
         for event in pygame.event.get():
@@ -23,23 +24,23 @@ class GameSceneController:
 
             if self.model.skill_tree_open:
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                    self.model.skill_tree_ui.handle_click(event.pos, self.model.player)
+                    self.view.skill_tree_ui.handle_click(event.pos, self.model.player)
                 continue
 
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 self._handle_player_attack(event.pos)
 
-    def update(self):
+    def update(self, dt=None):
         if self.model.skill_tree_open:
             return
 
-        dt = self.game.clock.get_time() / 1000.0
+        if dt is None:
+            dt = self.game.clock.get_time() / 1000.0
 
         if self.model.stage_manager:
             self.model.stage_manager.update(dt)
 
         self._update_exit_message_timer(dt)
-        self.model.stage_clear_message.update(dt)
 
         if self.model.player and not self.model.stage_manager.is_transitioning():
             self._update_player(dt)
@@ -86,8 +87,6 @@ class GameSceneController:
         player.move(dx, dy, dt)
         player.update(dt)
         player.update_cooldown(dt)
-        if self.model.xp_bar:
-            self.model.xp_bar.update(dt, player)
 
     def _update_world_systems(self, dt):
         self.model.loot_system.update(dt)
@@ -133,6 +132,7 @@ class GameSceneController:
         self.model.player.set_position(spawn_pos.x, spawn_pos.y)
         self.model.player.hp = self.model.player.max_hp
         self.model.reset_runtime_stage_state()
+        self.view.reset_runtime_stage_state()
         self.model.reset_enemy_manager_for_current_stage()
 
     def _spawn_damage_numbers_from_events(self):
@@ -156,7 +156,7 @@ class GameSceneController:
 
         if self.model.enemy_manager.is_stage_cleared():
             self.model.stage_cleared = True
-            self.model.stage_clear_message.show()
+            self.view.stage_clear_message.show()
 
     def _check_exit_zone(self):
         if not self.model.player or not self.model.stage_manager:
@@ -175,7 +175,8 @@ class GameSceneController:
             return
 
         if self.model.stage_manager.can_enter_exit_zone():
-            self.model.stage_manager.start_transition(self.model.player)
+            if self.model.stage_manager.start_transition(self.model.player):
+                self.view.start_stage_transition()
 
     def _sync_stage_change(self):
         if self.model.stage_manager.current_stage_index == self.model.current_stage_index:
@@ -183,5 +184,6 @@ class GameSceneController:
 
         self.model.current_stage_index = self.model.stage_manager.current_stage_index
         self.model.reset_runtime_stage_state()
+        self.view.reset_runtime_stage_state()
         self.model.reset_enemy_manager_for_current_stage()
         self.model.save_stage_start_progress()

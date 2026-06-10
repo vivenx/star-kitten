@@ -2,17 +2,16 @@ import pygame
 import random
 from settings import (
     WIDTH, HEIGHT,
-    OBSTACLE_TYPES, OBSTACLE_MIN_COUNT, OBSTACLE_MAX_COUNT,
+    OBSTACLE_TYPES, OBSTACLE_VARIANT_COUNTS, OBSTACLE_MIN_COUNT, OBSTACLE_MAX_COUNT,
     OBSTACLE_MIN_DISTANCE_FROM_PLAYER, OBSTACLE_MIN_DISTANCE_FROM_EXIT,
     OBSTACLE_MIN_DISTANCE_BETWEEN, OBSTACLE_COLLISION_HEIGHT_RATIO,
     STAGE_PLAY_AREA_MARGIN, EXIT_ZONE_SIZE,
-    COLOR_FOREST_NORMAL, COLOR_FOREST_INFECTED,
 )
 
 
 class Obstacle:
 
-    def __init__(self, x, y, obstacle_type_data, image=None):
+    def __init__(self, x, y, obstacle_type_data, image=None, variant_index=None):
         self.x = x
         self.y = y
         self.prefix = obstacle_type_data[0]
@@ -21,19 +20,13 @@ class Obstacle:
         self.is_solid = obstacle_type_data[3]
         self.damage = obstacle_type_data[4]
         self.damage_cooldown = obstacle_type_data[5]
-
-        self.image = image
-        if self.image is None:
-            self.image = self._load_random_image()
-
-
-        if self.image:
-            self.image = pygame.transform.scale(self.image, self.size)
+        variant_count = OBSTACLE_VARIANT_COUNTS.get(self.prefix, 1)
+        self.variant_index = variant_index if variant_index is not None else random.randint(1, variant_count)
 
         self.rect = pygame.Rect(x, y, self.size[0], self.size[1])
-        self.mask = self._create_mask()
+        self.mask = self._create_mask(image)
 
-    def _create_mask(self):
+    def _create_mask(self, image=None):
         collision_surface = pygame.Surface(self.size, pygame.SRCALPHA)
         collision_height = max(1, int(self.size[1] * OBSTACLE_COLLISION_HEIGHT_RATIO))
         collision_rect = pygame.Rect(
@@ -43,9 +36,10 @@ class Obstacle:
             collision_height
         )
 
-        if self.image:
+        if image:
+            image = pygame.transform.scale(image, self.size)
             collision_surface.blit(
-                self.image,
+                image,
                 collision_rect,
                 collision_rect
             )
@@ -64,29 +58,6 @@ class Obstacle:
         offset = (self.rect.x - other_rect.x, self.rect.y - other_rect.y)
         return other_mask.overlap_area(self.mask, offset)
 
-    def _load_random_image(self):
-        base_path = f"assets/images/forest/obstacles/{self.prefix}"
-        images = []
-
-        for i in range(1, 4):
-            try:
-                img = pygame.image.load(f"{base_path}_{i}.png").convert_alpha()
-                images.append(img)
-            except FileNotFoundError:
-                break
-
-        if images:
-            return random.choice(images)
-        return None
-
-    def draw(self, surface):
-        if self.image:
-            surface.blit(self.image, self.rect)
-        else:
-
-            color = COLOR_FOREST_INFECTED if "crystal" in self.prefix else COLOR_FOREST_NORMAL
-            pygame.draw.rect(surface, color, self.rect)
-
     def get_depth_y(self):
         return self.rect.bottom
 
@@ -100,10 +71,6 @@ class ExitZone:
         self.rect = pygame.Rect(x, y, width, height)
         self.active = True
 
-    def draw(self, surface):
-
-        pass
-
     def contains_point(self, point):
         return self.rect.collidepoint(point)
 
@@ -115,7 +82,6 @@ class Stage:
         self.name = name
         self.background_color = background_color
         self.background_image_path = background_image_path
-        self.background_image = None
 
         self.obstacles = []
         self.exit_zone = None
@@ -129,17 +95,8 @@ class Stage:
             HEIGHT - 2 * STAGE_PLAY_AREA_MARGIN
         )
 
-        self._load_background()
         self._setup_exit_zone()
         self.generate_obstacles()
-
-    def _load_background(self):
-        if self.background_image_path:
-            try:
-                self.background_image = pygame.image.load(self.background_image_path).convert()
-                self.background_image = pygame.transform.scale(self.background_image, (WIDTH, HEIGHT))
-            except FileNotFoundError:
-                pass
 
     def generate_obstacles(self):
         self.obstacles = []
@@ -217,24 +174,6 @@ class Stage:
 
     def update(self, dt):
         pass
-
-    def draw_background(self, surface):
-        if self.background_image:
-            surface.blit(self.background_image, (0, 0))
-        else:
-            surface.fill(self.background_color)
-
-
-        if self.exit_zone:
-            self.exit_zone.draw(surface)
-
-    def draw_obstacles(self, surface):
-        for obstacle in self.obstacles:
-            obstacle.draw(surface)
-
-    def draw(self, surface):
-        self.draw_background(surface)
-        self.draw_obstacles(surface)
 
     def get_solid_obstacles(self):
         return [obs for obs in self.obstacles if obs.is_solid]

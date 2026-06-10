@@ -54,9 +54,3 @@ class LootSystem:
     def clear(self):
         self.xp_orbs = []
         self.star_orbs = []
-
-    def draw(self, surface):
-        for orb in self.xp_orbs:
-            orb.draw(surface)
-        for orb in self.star_orbs:
-            orb.draw(surface)

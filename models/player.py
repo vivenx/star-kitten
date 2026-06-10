@@ -1,8 +1,6 @@
 import pygame
-import os
-import re
 from settings import (
-    PLAYER_SPEED, PLAYER_MAX_HP, PLAYER_COLLISION_HEIGHT_RATIO,
+    PLAYER_SPEED, PLAYER_SIZE, PLAYER_MAX_HP, PLAYER_COLLISION_HEIGHT_RATIO,
     PLAYER_ATTACK_COOLDOWN, DAMAGE_COOLDOWN_DEFAULT,
     PLAYER_ATTACK_DAMAGE, BASE_REQUIRED_XP, XP_PER_LEVEL,
     HP_PER_LEVEL, DAMAGE_PER_LEVEL
@@ -13,54 +11,13 @@ class Player(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
 
-        self.sprites = {
-            'right': [],
-            'left': []
-        }
-        self.attack_sprites = {
-            'right': [],
-            'left': []
-        }
-        self.damage_sprites = {
-            'right': [],
-            'left': []
-        }
-
-        base_path = 'assets/images/sprites_player'
-
-        default_sprite_path = os.path.join(base_path, 'default.png')
-        self.default_image = pygame.image.load(default_sprite_path).convert_alpha()
-
-        sprite_size = self.default_image.get_size()
-        self.sprites['right'] = self._load_animation(os.path.join(base_path, 'right', 'walk'), sprite_size)
-        self.sprites['left'] = self._load_animation(os.path.join(base_path, 'left', 'walk'), sprite_size)
-        self.attack_sprites['right'] = self._load_animation(os.path.join(base_path, 'right', 'attack'), sprite_size)
-        self.attack_sprites['left'] = self._load_animation(os.path.join(base_path, 'left', 'attack'), sprite_size)
-        self.damage_sprites['right'] = self._load_animation(os.path.join(base_path, 'right', 'damage'), sprite_size)
-        self.damage_sprites['left'] = self._load_animation(os.path.join(base_path, 'left', 'damage'), sprite_size)
-
-        if not self.damage_sprites['right']:
-            self.damage_sprites['right'] = [self.default_image]
-        if not self.damage_sprites['left']:
-            self.damage_sprites['left'] = [self.default_image]
-
         self.direction = 'right'
-        self.current_frame = 0
-        self.animation_speed = 5
-        self.animation_counter = 0
-        self.attack_animation_speed = 4
-        self.attack_frame = 0
-        self.attack_counter = 0
+        self.visual_action = None
+        self.visual_action_id = 0
         self.attack_cooldown = 0.0
         self.attack_cooldown_max = PLAYER_ATTACK_COOLDOWN
-        self.is_attacking = False
-        self.damage_animation_speed = 5
-        self.damage_frame = 0
-        self.damage_animation_counter = 0
-        self.is_damage_animating = False
 
-        self.image = self.default_image
-        self.rect = self.image.get_rect()
+        self.rect = pygame.Rect(0, 0, PLAYER_SIZE[0], PLAYER_SIZE[1])
         self.rect.x = x
         self.rect.y = y
 
@@ -91,33 +48,6 @@ class Player(pygame.sprite.Sprite):
         self.collision_height_ratio = PLAYER_COLLISION_HEIGHT_RATIO
         self._update_collision_rect()
 
-    def _load_animation(self, folder_path, size=None):
-        files = [
-            file_name
-            for file_name in os.listdir(folder_path)
-            if file_name.lower().endswith('.png')
-        ]
-        files.sort(key=lambda file_name: (
-            self._get_frame_number(file_name)
-            if self._get_frame_number(file_name) is not None
-            else 0,
-            file_name
-        ))
-
-        sprites = []
-        for file_name in files:
-            sprite = pygame.image.load(os.path.join(folder_path, file_name)).convert_alpha()
-            if size:
-                sprite = pygame.transform.scale(sprite, size)
-            sprites.append(sprite)
-        return sprites
-
-    def _get_frame_number(self, file_name):
-        match = re.search(r'\((\d+)\)|(\d+)', file_name)
-        if not match:
-            return None
-        return int(match.group(1) or match.group(2))
-
     def _update_collision_rect(self):
         collision_height = int(self.rect.height * self.collision_height_ratio)
         collision_y = self.rect.bottom - collision_height
@@ -137,17 +67,14 @@ class Player(pygame.sprite.Sprite):
             return False
 
         self.hp -= damage
-        self.start_damage_animation()
+        self.request_damage_visual()
         if self.hp <= 0:
             self.hp = 0
             return True
         return False
 
-    def start_damage_animation(self):
-        self.is_damage_animating = True
-        self.damage_frame = 0
-        self.damage_animation_counter = 0
-        self.image = self.damage_sprites[self.direction][self.damage_frame]
+    def request_damage_visual(self):
+        self._request_visual_action("damage")
 
     def start_damage_cooldown(self):
         self.damage_cooldown = self.damage_cooldown_max
@@ -240,47 +167,12 @@ class Player(pygame.sprite.Sprite):
         return self.hp / self.max_hp
 
     def update(self, dt):
-        if self.is_damage_animating:
-            self.damage_animation_counter += dt * 60
-            if self.damage_animation_counter >= self.damage_animation_speed:
-                self.damage_animation_counter = 0
-                self.damage_frame += 1
-                if self.damage_frame >= len(self.damage_sprites[self.direction]):
-                    self.damage_frame = 0
-                    self.is_damage_animating = False
-
-            if self.is_damage_animating:
-                self.image = self.damage_sprites[self.direction][self.damage_frame]
-        elif self.is_attacking:
-            self.attack_counter += dt * 60
-            if self.attack_counter >= self.attack_animation_speed:
-                self.attack_counter = 0
-                self.attack_frame += 1
-                if self.attack_frame >= len(self.attack_sprites[self.direction]):
-                    self.attack_frame = 0
-                    self.is_attacking = False
-
-            if self.is_attacking:
-                self.image = self.attack_sprites[self.direction][self.attack_frame]
-        elif self.is_moving:
-            self.animation_counter += dt * 60
-            if self.animation_counter >= self.animation_speed:
-                self.animation_counter = 0
-                self.current_frame = (self.current_frame + 1) % len(self.sprites[self.direction])
-                self.image = self.sprites[self.direction][self.current_frame]
-        else:
-            self.current_frame = 0
-            self.image = self.default_image
-
-
         self.rect.x = int(self.position.x)
         self.rect.y = int(self.position.y)
-
-
         self._update_collision_rect()
 
     def start_attack(self, mouse_pos):
-        if self.attack_cooldown > 0 or self.is_attacking:
+        if self.attack_cooldown > 0:
             return False
 
         if mouse_pos[0] < self.get_collision_rect().centerx:
@@ -289,10 +181,7 @@ class Player(pygame.sprite.Sprite):
             self.direction = 'right'
 
         self.attack_cooldown = self.attack_cooldown_max
-        self.is_attacking = True
-        self.attack_frame = 0
-        self.attack_counter = 0
-        self.image = self.attack_sprites[self.direction][self.attack_frame]
+        self._request_visual_action("attack")
         return True
 
     def update_rect(self):
@@ -311,11 +200,10 @@ class Player(pygame.sprite.Sprite):
             self.is_moving = True
 
 
-            if not self.is_attacking:
-                if dx > 0:
-                    self.direction = 'right'
-                elif dx < 0:
-                    self.direction = 'left'
+            if dx > 0:
+                self.direction = 'right'
+            elif dx < 0:
+                self.direction = 'left'
 
 
         screen_width, screen_height = pygame.display.get_surface().get_size()
@@ -344,3 +232,7 @@ class Player(pygame.sprite.Sprite):
 
     def is_taking_damage_from_crystal(self):
         return not self.invincible
+
+    def _request_visual_action(self, action):
+        self.visual_action = action
+        self.visual_action_id += 1

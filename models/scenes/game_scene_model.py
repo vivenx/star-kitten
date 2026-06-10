@@ -1,25 +1,17 @@
-import pygame
-
 from controllers.managers.enemy_manager import EnemyManager
 from controllers.managers.stage_manager import StageManager
 from controllers.systems.combat_system import CombatSystem
 from controllers.systems.loot_system import LootSystem
 from controllers.systems.player_collision_system import PlayerCollisionSystem
 from models.player import Player
-from views.effects.visual_effects import StageClearMessage
-from views.ui.health_bar import HealthBar
-from views.ui.skill_tree_ui import SkillTreeUI
-from views.ui.xp_bar import XPBar
 from settings import EXIT_LOCK_MESSAGE_TIME
 
 
 class GameSceneModel:
     def __init__(self):
         self.player = None
-        self.health_bar = None
         self.stage_manager = None
         self.enemy_manager = None
-        self.xp_bar = None
         self.damage_numbers = []
         self.loot_system = LootSystem()
         self.combat_system = CombatSystem()
@@ -27,18 +19,13 @@ class GameSceneModel:
         self.current_stage_index = 0
         self.stage_start_progress = None
         self.stage_cleared = False
-        self.stage_clear_message = StageClearMessage()
         self.exit_message = "РЈРЅРёС‡С‚РѕР¶СЊС‚Рµ РІСЃРµС… РІСЂР°РіРѕРІ"
         self.exit_message_timer = 0.0
-        self.exit_message_font = pygame.font.Font(None, 48)
         self.exit_lock_message_time = EXIT_LOCK_MESSAGE_TIME
         self.skill_tree_open = False
-        self.skill_tree_ui = SkillTreeUI()
 
         self._setup_stage_manager()
         self._create_player()
-        self._create_health_bar()
-        self._create_xp_bar()
         self._create_enemy_manager()
         self.save_stage_start_progress()
 
@@ -48,12 +35,6 @@ class GameSceneModel:
     def _create_player(self):
         spawn_pos = self.stage_manager.current_stage.player_spawn
         self.player = Player(spawn_pos.x, spawn_pos.y)
-
-    def _create_health_bar(self):
-        self.health_bar = HealthBar(18, 10)
-
-    def _create_xp_bar(self):
-        self.xp_bar = XPBar(18, 74)
 
     def _create_enemy_manager(self):
         self.enemy_manager = EnemyManager(
@@ -72,7 +53,6 @@ class GameSceneModel:
         self.damage_numbers = []
         self.combat_system.clear()
         self.stage_cleared = False
-        self.stage_clear_message.reset()
 
     def reset_enemy_manager_for_current_stage(self):
         if not self.enemy_manager:

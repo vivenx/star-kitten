@@ -88,9 +88,16 @@ class EnergyWaveEffect:
         if not self.alive:
             return
 
-        rect = self.rect
+        self.draw_wave(surface, self, self.phase)
+
+    @staticmethod
+    def draw_wave(surface, wave, phase):
+        if not wave.is_alive():
+            return
+
+        rect = wave.rect
         effect_surface = pygame.Surface(rect.size, pygame.SRCALPHA)
-        pulse = int(24 * math.sin(self.phase))
+        pulse = int(24 * math.sin(phase))
         core = (255, 246, 210, 230)
         aura = (255, 74 + pulse, 42, 110)
         trail = (255, 130, 50, 120)
@@ -98,8 +105,8 @@ class EnergyWaveEffect:
         pygame.draw.ellipse(effect_surface, aura, effect_surface.get_rect().inflate(-4, -10), 4)
         pygame.draw.arc(effect_surface, core, effect_surface.get_rect().inflate(-14, -24), -1.2, 1.2, 7)
 
-        tail_x = 8 if self.direction == "right" else rect.width - 8
-        head_x = rect.width - 12 if self.direction == "right" else 12
+        tail_x = 8 if wave.direction == "right" else rect.width - 8
+        head_x = rect.width - 12 if wave.direction == "right" else 12
         for offset in (-30, -10, 12, 32):
             pygame.draw.line(
                 effect_surface,

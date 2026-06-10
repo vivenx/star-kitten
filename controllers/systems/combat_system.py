@@ -1,12 +1,15 @@
 import pygame
 
-from views.effects.attack_effects import EnergyWaveEffect, SlashEffect
 from settings import (
     ATTACK_DOUBLE_HIT_DAMAGE_MULTIPLIER,
     ATTACK_DOUBLE_HIT_DELAY,
     ATTACK_SLASH_RANGE_MULTIPLIER,
     ATTACK_SLASH_WIDTH_MULTIPLIER,
     ATTACK_WAVE_DAMAGE_MULTIPLIER,
+    ATTACK_WAVE_HEIGHT,
+    ATTACK_WAVE_RANGE,
+    ATTACK_WAVE_SPEED,
+    ATTACK_WAVE_WIDTH,
     PLAYER_ATTACK_RANGE,
     PLAYER_ATTACK_WIDTH,
 )
@@ -14,7 +17,7 @@ from settings import (
 
 class CombatSystem:
     def __init__(self):
-        self.attack_effects = []
+        self.attack_visual_events = []
         self.energy_waves = []
         self.pending_double_hits = []
 
@@ -39,7 +42,7 @@ class CombatSystem:
             attack_rect,
             player.attack_damage
         )
-        self.attack_effects.append(SlashEffect(attack_rect, player.direction))
+        self._queue_slash_visual(attack_rect, player.direction)
         loot_system.spawn_enemy_drops(defeated_positions)
         on_damage_events()
         on_stage_clear()
@@ -51,10 +54,6 @@ class CombatSystem:
         if not enemy_manager:
             return
 
-        for effect in self.attack_effects:
-            effect.update(dt)
-        self.attack_effects = [effect for effect in self.attack_effects if effect.is_alive()]
-
         self._update_pending_double_hits(dt, enemy_manager, loot_system, on_damage_events, on_stage_clear)
         self._update_energy_waves(dt, enemy_manager, loot_system, on_damage_events, on_stage_clear)
 
@@ -62,7 +61,7 @@ class CombatSystem:
         if player.has_skill("attack_wave"):
             wave_damage = max(1, int(player.attack_damage * ATTACK_WAVE_DAMAGE_MULTIPLIER))
             origin = attack_rect.midleft if player.direction == "left" else attack_rect.midright
-            self.energy_waves.append(EnergyWaveEffect(origin, player.direction, wave_damage))
+            self.energy_waves.append(EnergyWave(origin, player.direction, wave_damage))
 
         if player.has_skill("attack_double_hit"):
             double_hit_damage = max(1, int(player.attack_damage * ATTACK_DOUBLE_HIT_DAMAGE_MULTIPLIER))
@@ -112,7 +111,7 @@ class CombatSystem:
                 continue
 
             defeated_positions, _ = enemy_manager.damage_enemies_with_result(hit["rect"], hit["damage"])
-            self.attack_effects.append(SlashEffect(hit["rect"], hit["direction"], color=(255, 225, 120)))
+            self._queue_slash_visual(hit["rect"], hit["direction"], color=(255, 225, 120))
             loot_system.spawn_enemy_drops(defeated_positions)
             on_damage_events()
             on_stage_clear()
@@ -141,12 +140,48 @@ class CombatSystem:
         self.energy_waves = [wave for wave in self.energy_waves if wave.is_alive()]
 
     def clear(self):
-        self.attack_effects = []
+        self.attack_visual_events = []
         self.energy_waves = []
         self.pending_double_hits = []
 
-    def draw(self, surface):
-        for effect in self.attack_effects:
-            effect.draw(surface)
-        for wave in self.energy_waves:
-            wave.draw(surface)
+    def consume_attack_visual_events(self):
+        events = self.attack_visual_events
+        self.attack_visual_events = []
+        return events
+
+    def _queue_slash_visual(self, attack_rect, direction, color=(255, 92, 50)):
+        self.attack_visual_events.append({
+            "type": "slash",
+            "rect": attack_rect.copy(),
+            "direction": direction,
+            "color": color,
+        })
+
+
+class EnergyWave:
+    def __init__(self, origin, direction, damage):
+        self.position = pygame.Vector2(origin)
+        self.start_x = self.position.x
+        self.direction = direction
+        self.damage = damage
+        self.hit_enemy_ids = set()
+        self.alive = True
+
+    @property
+    def rect(self):
+        rect = pygame.Rect(0, 0, ATTACK_WAVE_WIDTH, ATTACK_WAVE_HEIGHT)
+        rect.center = (int(self.position.x), int(self.position.y))
+        return rect
+
+    def update(self, dt):
+        if not self.alive:
+            return
+
+        sign = -1 if self.direction == "left" else 1
+        self.position.x += ATTACK_WAVE_SPEED * sign * dt
+
+        if abs(self.position.x - self.start_x) >= ATTACK_WAVE_RANGE:
+            self.alive = False
+
+    def is_alive(self):
+        return self.alive

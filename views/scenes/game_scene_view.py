@@ -1,39 +1,94 @@
+import pygame
+
 from settings import HEIGHT, WIDTH
+from views.entities.enemy_view import EnemyView
+from views.entities.loot_view import LootView
+from views.entities.player_view import PlayerView
+from views.entities.stage_view import StageView
+from views.effects.combat_effects_view import CombatEffectsView
+from views.effects.visual_effects import StageClearMessage
+from views.transitions.fader import Fader
+from views.transitions.stage_title import StageTitle
+from views.ui.health_bar import HealthBar
+from views.ui.skill_tree_ui import SkillTreeUI
+from views.ui.xp_bar import XPBar
 
 
 class GameSceneView:
     def __init__(self, screen, model):
         self.screen = screen
         self.model = model
+        self.health_bar = HealthBar(18, 10)
+        self.xp_bar = XPBar(18, 74)
+        self.stage_clear_message = StageClearMessage()
+        self.skill_tree_ui = SkillTreeUI()
+        self.exit_message_font = pygame.font.Font(None, 48)
+        self.fader = Fader()
+        self.stage_title = StageTitle()
+        self.enemy_view = EnemyView()
+        self.player_view = PlayerView()
+        self.stage_view = StageView()
+        self.loot_view = LootView()
+        self.combat_effects_view = CombatEffectsView()
+
+    def update(self, dt):
+        self._show_pending_stage_titles()
+        self.fader.update(dt)
+        self.stage_title.update(dt)
+        if self.model.enemy_manager:
+            self.enemy_view.update(dt, self.model.enemy_manager.enemies)
+        self.loot_view.update(dt, self.model.loot_system)
+        if self.model.player:
+            self.player_view.update(dt, self.model.player)
+            self.xp_bar.update(dt, self.model.player)
+        self.combat_effects_view.update(dt, self.model.combat_system)
+        self.stage_clear_message.update(dt)
+
+    def start_stage_transition(self):
+        self._show_pending_stage_titles()
+        self.fader.start_fade_out(callback=self._on_stage_fade_out_complete)
+
+    def reset_runtime_stage_state(self):
+        self.stage_clear_message.reset()
 
     def draw(self):
         if self.model.stage_manager:
-            self.model.stage_manager.draw_background(self.screen)
+            self.stage_view.draw_background(
+                self.screen,
+                self.model.stage_manager.current_stage
+            )
 
         if self.model.player:
-            self.model.loot_system.draw(self.screen)
+            self.loot_view.draw(self.screen, self.model.loot_system)
             self._draw_depth_sorted_world()
-            self.model.combat_system.draw(self.screen)
+            self.combat_effects_view.draw(self.screen, self.model.combat_system)
             for number in self.model.damage_numbers:
                 number.draw(self.screen)
             self._draw_ui()
 
         if self.model.stage_manager:
-            self.model.stage_manager.draw_overlays(self.screen)
+            self.fader.draw(self.screen)
+            self.stage_title.draw(self.screen)
 
         if self.model.skill_tree_open:
-            self.model.skill_tree_ui.draw(self.screen, self.model.player)
+            self.skill_tree_ui.draw(self.screen, self.model.player)
 
     def _draw_depth_sorted_world(self):
         drawables = []
         current_stage = self.model.stage_manager.current_stage
 
         for obstacle in current_stage.obstacles:
-            drawables.append((obstacle.get_depth_y(), obstacle.draw))
+            drawables.append((
+                obstacle.get_depth_y(),
+                lambda surface, obstacle=obstacle: self.stage_view.draw_obstacle(surface, obstacle),
+            ))
 
         if self.model.enemy_manager:
             for enemy in self.model.enemy_manager.enemies:
-                drawables.append((enemy.get_collision_rect().bottom, enemy.draw))
+                drawables.append((
+                    enemy.get_collision_rect().bottom,
+                    lambda surface, enemy=enemy: self.enemy_view.draw(surface, enemy),
+                ))
 
         drawables.append((self.model.player.get_collision_rect().bottom, self._draw_player))
 
@@ -41,31 +96,31 @@ class GameSceneView:
             draw(self.screen)
 
     def _draw_player(self, surface):
-        surface.blit(self.model.player.image, self.model.player.rect)
+        self.player_view.draw(surface, self.model.player)
 
     def _draw_ui(self):
-        if self.model.health_bar and self.model.player:
-            self.model.health_bar.draw(
+        if self.model.player:
+            self.health_bar.draw(
                 self.screen,
                 self.model.player.hp,
                 self.model.player.max_hp
             )
 
-        if self.model.xp_bar and self.model.player:
-            self.model.xp_bar.draw(self.screen, self.model.player)
+        if self.model.player:
+            self.xp_bar.draw(self.screen, self.model.player)
 
-        self.model.stage_clear_message.draw(self.screen)
+        self.stage_clear_message.draw(self.screen)
 
         if self.model.exit_message_timer > 0:
             self._draw_exit_message()
 
     def _draw_exit_message(self):
-        text_surface = self.model.exit_message_font.render(
+        text_surface = self.exit_message_font.render(
             self.model.exit_message,
             True,
             (255, 255, 255)
         )
-        shadow_surface = self.model.exit_message_font.render(
+        shadow_surface = self.exit_message_font.render(
             self.model.exit_message,
             True,
             (20, 20, 20)
@@ -75,3 +130,17 @@ class GameSceneView:
 
         self.screen.blit(shadow_surface, shadow_rect)
         self.screen.blit(text_surface, text_rect)
+
+    def _show_pending_stage_titles(self):
+        if not self.model.stage_manager:
+            return
+
+        for title, subtitle in self.model.stage_manager.consume_stage_title_events():
+            self.stage_title.show(title, subtitle)
+
+    def _on_stage_fade_out_complete(self):
+        if not self.model.stage_manager.complete_fade_out():
+            return
+
+        self._show_pending_stage_titles()
+        self.fader.start_fade_in(callback=self.model.stage_manager.complete_fade_in)

@@ -4,6 +4,7 @@ FPS = 60
 
 
 PLAYER_SPEED = 300
+PLAYER_SIZE = (124, 125)
 PLAYER_MAX_HP = 150
 PLAYER_COLLISION_HEIGHT_RATIO = 0.5
 PLAYER_ATTACK_DAMAGE = 20
@@ -64,6 +65,14 @@ OBSTACLE_TYPES = [
     ("tree", 20, (100, 120), True, 0, 0),
     ("crystal", 10, (80, 100), False, 10, 0.5),
 ]
+
+OBSTACLE_VARIANT_COUNTS = {
+    "stone": 3,
+    "bush": 2,
+    "timber": 2,
+    "tree": 2,
+    "crystal": 3,
+}
 
 
 STAGE_PLAY_AREA_MARGIN = 100
