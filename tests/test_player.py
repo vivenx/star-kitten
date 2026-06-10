@@ -1,6 +1,6 @@
 import unittest
 
-from core.player import Player
+from models.player import Player
 from settings import (
     BASE_REQUIRED_XP,
     DAMAGE_PER_LEVEL,
@@ -39,12 +39,22 @@ class PlayerTest(unittest.TestCase):
         required_level_1 = BASE_REQUIRED_XP + XP_PER_LEVEL
 
         player.add_xp(required_level_1 + 5)
+        player.add_stars(3)
         player.restore_progress_snapshot(snapshot)
 
         self.assertEqual(player.level, 1)
         self.assertEqual(player.xp, 0)
+        self.assertEqual(player.stars, 0)
         self.assertEqual(player.max_hp, PLAYER_MAX_HP)
         self.assertEqual(player.attack_damage, PLAYER_ATTACK_DAMAGE)
+
+    def test_add_stars_ignores_non_positive_values(self):
+        player = Player(10, 20)
+
+        self.assertEqual(player.add_stars(2), 2)
+        self.assertEqual(player.add_stars(0), 0)
+        self.assertEqual(player.add_stars(-1), 0)
+        self.assertEqual(player.stars, 2)
 
     def test_damage_and_invincibility_cooldown(self):
         player = Player(10, 20)

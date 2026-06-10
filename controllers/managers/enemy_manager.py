@@ -1,8 +1,8 @@
 import random
 import math
 
-from enemies.enemy import Enemy
-from enemies.pathfinder import Pathfinder
+from models.enemy import Enemy
+from models.pathfinder import Pathfinder
 from settings import (
     ENEMY_MAX_COUNT,
     ENEMY_COLLISION_HEIGHT_RATIO,
@@ -55,7 +55,14 @@ class EnemyManager:
 
         for enemy in self.enemies:
             hp_before = self.player.hp
-            player_died = enemy.update(dt, self.player, self.pathfinder, solid_rects, self.enemies) or player_died
+            player_died = enemy.update(
+                dt,
+                self.player,
+                self.pathfinder,
+                solid_rects,
+                self.enemies,
+                self.stage.play_area
+            ) or player_died
             damage_dealt = hp_before - self.player.hp
             if damage_dealt > 0:
                 self.damage_number_events.append({
@@ -77,33 +84,32 @@ class EnemyManager:
     def has_alive_enemies(self):
         return any(enemy.is_alive() for enemy in self.enemies)
 
-    def attack_enemies(self, attack_rect, damage):
+    def damage_enemies_with_result(self, attack_rect, damage, ignored_enemy_ids=None):
+        ignored_enemy_ids = ignored_enemy_ids or set()
+        defeated_positions = []
         hit_count = 0
 
         for enemy in self.enemies:
-            if enemy.is_alive() and attack_rect.colliderect(enemy.get_collision_rect()):
-                enemy.take_damage(damage)
-                hit_count += 1
+            enemy_id = id(enemy)
+            if enemy_id in ignored_enemy_ids:
+                continue
+            if not enemy.is_alive() or not attack_rect.colliderect(enemy.get_collision_rect()):
+                continue
+
+            hit_count += 1
+            ignored_enemy_ids.add(enemy_id)
+            hit_position = enemy.get_collision_rect().center
+            died = enemy.take_damage(damage)
+            self.damage_number_events.append({
+                "amount": damage,
+                "position": hit_position,
+                "target": "enemy",
+            })
+            if died:
+                defeated_positions.append(hit_position)
 
         self.enemies = [enemy for enemy in self.enemies if enemy.is_alive()]
-        return hit_count
-
-    def damage_enemies(self, attack_rect, damage):
-        defeated_positions = []
-
-        for enemy in self.enemies:
-            if enemy.is_alive() and attack_rect.colliderect(enemy.get_collision_rect()):
-                died = enemy.take_damage(damage)
-                self.damage_number_events.append({
-                    "amount": damage,
-                    "position": enemy.get_collision_rect().center,
-                    "target": "enemy",
-                })
-                if died:
-                    defeated_positions.append(enemy.get_collision_rect().center)
-
-        self.enemies = [enemy for enemy in self.enemies if enemy.is_alive()]
-        return defeated_positions
+        return defeated_positions, hit_count
 
     def consume_damage_number_events(self):
         events = self.damage_number_events

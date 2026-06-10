@@ -1,6 +1,6 @@
-from stages.stage import Stage
-from stages.fader import Fader
-from stages.stage_title import StageTitle
+from models.stage import Stage
+from views.transitions.fader import Fader
+from views.transitions.stage_title import StageTitle
 from settings import (
     ARENA_COUNT,
     COLOR_FOREST_NORMAL, COLOR_FOREST_INFECTED, COLOR_FOREST_BOSS,
@@ -91,6 +91,12 @@ class StageManager:
 
     def draw(self, surface):
         self.current_stage.draw(surface)
+        self.draw_overlays(surface)
+
+    def draw_background(self, surface):
+        self.current_stage.draw_background(surface)
+
+    def draw_overlays(self, surface):
         self.fader.draw(surface)
         self.stage_title.draw(surface)
 

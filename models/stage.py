@@ -4,9 +4,9 @@ from settings import (
     WIDTH, HEIGHT,
     OBSTACLE_TYPES, OBSTACLE_MIN_COUNT, OBSTACLE_MAX_COUNT,
     OBSTACLE_MIN_DISTANCE_FROM_PLAYER, OBSTACLE_MIN_DISTANCE_FROM_EXIT,
-    OBSTACLE_MIN_DISTANCE_BETWEEN,
-    STAGE_PLAY_AREA_MARGIN, EXIT_ZONE_SIZE, EXIT_ZONE_POSITION,
-    COLOR_FOREST_NORMAL, COLOR_FOREST_INFECTED, COLOR_FOREST_BOSS,
+    OBSTACLE_MIN_DISTANCE_BETWEEN, OBSTACLE_COLLISION_HEIGHT_RATIO,
+    STAGE_PLAY_AREA_MARGIN, EXIT_ZONE_SIZE,
+    COLOR_FOREST_NORMAL, COLOR_FOREST_INFECTED,
 )
 
 
@@ -31,6 +31,38 @@ class Obstacle:
             self.image = pygame.transform.scale(self.image, self.size)
 
         self.rect = pygame.Rect(x, y, self.size[0], self.size[1])
+        self.mask = self._create_mask()
+
+    def _create_mask(self):
+        collision_surface = pygame.Surface(self.size, pygame.SRCALPHA)
+        collision_height = max(1, int(self.size[1] * OBSTACLE_COLLISION_HEIGHT_RATIO))
+        collision_rect = pygame.Rect(
+            0,
+            self.size[1] - collision_height,
+            self.size[0],
+            collision_height
+        )
+
+        if self.image:
+            collision_surface.blit(
+                self.image,
+                collision_rect,
+                collision_rect
+            )
+        else:
+            collision_surface.fill((255, 255, 255, 255), collision_rect)
+
+        return pygame.mask.from_surface(collision_surface)
+
+    def collides_with_mask(self, other_rect, other_mask):
+        return self.get_mask_overlap_area(other_rect, other_mask) > 0
+
+    def get_mask_overlap_area(self, other_rect, other_mask):
+        if not self.rect.colliderect(other_rect):
+            return 0
+
+        offset = (self.rect.x - other_rect.x, self.rect.y - other_rect.y)
+        return other_mask.overlap_area(self.mask, offset)
 
     def _load_random_image(self):
         base_path = f"assets/images/forest/obstacles/{self.prefix}"
@@ -54,6 +86,9 @@ class Obstacle:
 
             color = COLOR_FOREST_INFECTED if "crystal" in self.prefix else COLOR_FOREST_NORMAL
             pygame.draw.rect(surface, color, self.rect)
+
+    def get_depth_y(self):
+        return self.rect.bottom
 
     def deals_damage(self):
         return self.damage > 0
@@ -183,8 +218,7 @@ class Stage:
     def update(self, dt):
         pass
 
-    def draw(self, surface):
-
+    def draw_background(self, surface):
         if self.background_image:
             surface.blit(self.background_image, (0, 0))
         else:
@@ -194,9 +228,13 @@ class Stage:
         if self.exit_zone:
             self.exit_zone.draw(surface)
 
-
+    def draw_obstacles(self, surface):
         for obstacle in self.obstacles:
             obstacle.draw(surface)
+
+    def draw(self, surface):
+        self.draw_background(surface)
+        self.draw_obstacles(surface)
 
     def get_solid_obstacles(self):
         return [obs for obs in self.obstacles if obs.is_solid]

@@ -126,13 +126,13 @@ class Enemy(pygame.sprite.Sprite):
             return None
         return int(match.group(1) or match.group(2))
 
-    def update(self, dt, player, pathfinder, solid_rects, enemies):
+    def update(self, dt, player, pathfinder, solid_rects, enemies, play_area=None):
         if not self.is_alive():
             return False
 
         self._update_attack_cooldown(dt)
         self._update_path(dt, player, pathfinder)
-        self._move_along_path(dt, solid_rects, enemies)
+        self._move_along_path(dt, solid_rects, enemies, play_area)
         player_died = self._attack_player(player)
         self._update_animation(dt)
         self._sync_rect()
@@ -180,7 +180,7 @@ class Enemy(pygame.sprite.Sprite):
             self.path = new_path
             self.path_index = 1 if len(self.path) > 1 else 0
 
-    def _move_along_path(self, dt, solid_rects, enemies):
+    def _move_along_path(self, dt, solid_rects, enemies, play_area=None):
         self.is_moving = False
         self.velocity.update(0, 0)
 
@@ -203,11 +203,11 @@ class Enemy(pygame.sprite.Sprite):
             self.direction = "left"
 
         moved = False
-        moved = self._move_axis(self.velocity.x * dt, 0, solid_rects, enemies) or moved
-        moved = self._move_axis(0, self.velocity.y * dt, solid_rects, enemies) or moved
+        moved = self._move_axis(self.velocity.x * dt, 0, solid_rects, enemies, play_area) or moved
+        moved = self._move_axis(0, self.velocity.y * dt, solid_rects, enemies, play_area) or moved
         self.is_moving = moved
 
-    def _move_axis(self, dx, dy, solid_rects, enemies):
+    def _move_axis(self, dx, dy, solid_rects, enemies, play_area=None):
         if dx == 0 and dy == 0:
             return False
 
@@ -216,12 +216,15 @@ class Enemy(pygame.sprite.Sprite):
         self.position.y += dy
         self._sync_rect()
 
-        if self._has_collision(solid_rects, enemies):
+        if self._has_collision(solid_rects, enemies) or self._is_outside_play_area(play_area):
             self.position = old_position
             self._sync_rect()
             return False
 
         return True
+
+    def _is_outside_play_area(self, play_area):
+        return bool(play_area and not play_area.contains(self.get_collision_rect()))
 
     def _has_collision(self, solid_rects, enemies):
         collision_rect = self.get_collision_rect()

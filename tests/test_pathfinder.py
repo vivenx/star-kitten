@@ -2,7 +2,7 @@ import unittest
 
 import pygame
 
-from enemies.pathfinder import Pathfinder
+from models.pathfinder import Pathfinder
 
 
 class DummyObstacle:

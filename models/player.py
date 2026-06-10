@@ -2,8 +2,8 @@ import pygame
 import os
 import re
 from settings import (
-    PLAYER_SPEED, PLAYER_MAX_HP, PLAYER_SIZE, PLAYER_COLLISION_HEIGHT_RATIO,
-    PLAYER_ATTACK_COOLDOWN, DAMAGE_COOLDOWN_DEFAULT, COLOR_DAMAGE_FLASH,
+    PLAYER_SPEED, PLAYER_MAX_HP, PLAYER_COLLISION_HEIGHT_RATIO,
+    PLAYER_ATTACK_COOLDOWN, DAMAGE_COOLDOWN_DEFAULT,
     PLAYER_ATTACK_DAMAGE, BASE_REQUIRED_XP, XP_PER_LEVEL,
     HP_PER_LEVEL, DAMAGE_PER_LEVEL
 )
@@ -79,6 +79,8 @@ class Player(pygame.sprite.Sprite):
         self.attack_damage = PLAYER_ATTACK_DAMAGE
         self.level = 1
         self.xp = 0
+        self.stars = 0
+        self.unlocked_skills = set()
 
 
         self.damage_cooldown = 0.0
@@ -185,12 +187,32 @@ class Player(pygame.sprite.Sprite):
 
         return levels_gained
 
+    def add_stars(self, amount):
+        if amount <= 0:
+            return 0
+
+        self.stars += amount
+        return amount
+
+    def has_skill(self, skill_id):
+        return skill_id in self.unlocked_skills
+
+    def unlock_skill(self, skill_id, cost):
+        if self.has_skill(skill_id) or self.stars < cost:
+            return False
+
+        self.stars -= cost
+        self.unlocked_skills.add(skill_id)
+        return True
+
     def get_progress_snapshot(self):
         return {
             "level": self.level,
             "xp": self.xp,
+            "stars": self.stars,
             "max_hp": self.max_hp,
             "attack_damage": self.attack_damage,
+            "unlocked_skills": tuple(sorted(self.unlocked_skills)),
         }
 
     def restore_progress_snapshot(self, snapshot):
@@ -199,8 +221,10 @@ class Player(pygame.sprite.Sprite):
 
         self.level = snapshot["level"]
         self.xp = snapshot["xp"]
+        self.stars = snapshot.get("stars", 0)
         self.max_hp = snapshot["max_hp"]
         self.attack_damage = snapshot["attack_damage"]
+        self.unlocked_skills = set(snapshot.get("unlocked_skills", ()))
         self.hp = min(self.hp, self.max_hp)
 
     def level_up(self):

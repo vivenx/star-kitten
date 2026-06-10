@@ -2,7 +2,6 @@ import pygame
 from settings import WIDTH, HEIGHT, FPS
 from scenes.menu_scene import MenuScene
 from scenes.game_scene import GameScene
-from components.health_bar import HealthBar
 
 
 class Game:
