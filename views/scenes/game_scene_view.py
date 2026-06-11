@@ -30,6 +30,33 @@ class GameSceneView:
         self.stage_view = StageView()
         self.loot_view = LootView()
         self.combat_effects_view = CombatEffectsView()
+        game_over_image = pygame.image.load(
+            "assets/images/game_over_screen.png"
+        ).convert_alpha()
+        game_over_height = int(HEIGHT * 0.88)
+        game_over_width = int(
+            game_over_image.get_width()
+            * game_over_height
+            / game_over_image.get_height()
+        )
+        self.game_over_image = pygame.transform.smoothscale(
+            game_over_image, (game_over_width, game_over_height)
+        )
+        self.game_over_rect = self.game_over_image.get_rect(
+            center=(WIDTH // 2, HEIGHT // 2)
+        )
+        self.game_over_retry_rect = pygame.Rect(
+            self.game_over_rect.x + int(game_over_width * 0.21),
+            self.game_over_rect.y + int(game_over_height * 0.59),
+            int(game_over_width * 0.58),
+            int(game_over_height * 0.12)
+        )
+        self.game_over_menu_rect = pygame.Rect(
+            self.game_over_rect.x + int(game_over_width * 0.21),
+            self.game_over_rect.y + int(game_over_height * 0.72),
+            int(game_over_width * 0.58),
+            int(game_over_height * 0.09)
+        )
 
     def update(self, dt):
         self._show_pending_stage_titles()
@@ -72,6 +99,9 @@ class GameSceneView:
 
         if self.model.skill_tree_open:
             self.skill_tree_ui.draw(self.screen, self.model.player)
+
+        if self.model.game_over:
+            self.screen.blit(self.game_over_image, self.game_over_rect)
 
     def _draw_depth_sorted_world(self):
         drawables = []

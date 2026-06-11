@@ -34,18 +34,24 @@ class Fader:
             if self.alpha >= 255:
                 self.alpha = 255
                 self.is_fading_out = False
-                if self.fade_complete_callback and self.transition_stage == "out":
-                    self.fade_complete_callback()
-                    self.transition_stage = None
+                callback = self.fade_complete_callback
+                should_call = callback and self.transition_stage == "out"
+                self.fade_complete_callback = None
+                self.transition_stage = None
+                if should_call:
+                    callback()
 
         elif self.is_fading_in:
             self.alpha -= alpha_change
             if self.alpha <= 0:
                 self.alpha = 0
                 self.is_fading_in = False
-                if self.fade_complete_callback and self.transition_stage == "in":
-                    self.fade_complete_callback()
-                    self.transition_stage = None
+                callback = self.fade_complete_callback
+                should_call = callback and self.transition_stage == "in"
+                self.fade_complete_callback = None
+                self.transition_stage = None
+                if should_call:
+                    callback()
 
         self.fade_surface.set_alpha(self.alpha)
 

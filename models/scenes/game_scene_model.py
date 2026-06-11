@@ -19,10 +19,11 @@ class GameSceneModel:
         self.current_stage_index = 0
         self.stage_start_progress = None
         self.stage_cleared = False
-        self.exit_message = "РЈРЅРёС‡С‚РѕР¶СЊС‚Рµ РІСЃРµС… РІСЂР°РіРѕРІ"
+        self.exit_message = "Сначала уничтожьте всех врагов"
         self.exit_message_timer = 0.0
         self.exit_lock_message_time = EXIT_LOCK_MESSAGE_TIME
         self.skill_tree_open = False
+        self.game_over = False
 
         self._setup_stage_manager()
         self._create_player()

@@ -15,6 +15,10 @@ class GameSceneController:
             if event.type == pygame.QUIT:
                 self.game.running = False
 
+            if self.model.game_over:
+                self._handle_game_over_event(event)
+                continue
+
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_z:
                     self.model.skill_tree_open = not self.model.skill_tree_open
@@ -31,7 +35,7 @@ class GameSceneController:
                 self._handle_player_attack(event.pos)
 
     def update(self, dt=None):
-        if self.model.skill_tree_open:
+        if self.model.skill_tree_open or self.model.game_over:
             return
 
         if dt is None:
@@ -45,6 +49,8 @@ class GameSceneController:
         if self.model.player and not self.model.stage_manager.is_transitioning():
             self._update_player(dt)
             self._update_world_systems(dt)
+            if self.model.game_over:
+                return
             self._update_enemies(dt)
             self._check_exit_zone()
 
@@ -127,6 +133,10 @@ class GameSceneController:
         self._update_stage_clear_state()
 
     def _on_player_death(self):
+        self.model.game_over = True
+        self.model.skill_tree_open = False
+
+    def _restart_current_stage(self):
         spawn_pos = self.model.stage_manager.current_stage.player_spawn
         self.model.player.restore_progress_snapshot(self.model.stage_start_progress)
         self.model.player.set_position(spawn_pos.x, spawn_pos.y)
@@ -134,6 +144,25 @@ class GameSceneController:
         self.model.reset_runtime_stage_state()
         self.view.reset_runtime_stage_state()
         self.model.reset_enemy_manager_for_current_stage()
+        self.model.game_over = False
+
+    def _handle_game_over_event(self, event):
+        if event.type == pygame.KEYDOWN:
+            if event.key in (pygame.K_RETURN, pygame.K_SPACE):
+                self._restart_current_stage()
+            elif event.key == pygame.K_ESCAPE:
+                self._restart_current_stage()
+                self.game.change_scene("menu")
+            return
+
+        if event.type != pygame.MOUSEBUTTONDOWN or event.button != 1:
+            return
+
+        if self.view.game_over_retry_rect.collidepoint(event.pos):
+            self._restart_current_stage()
+        elif self.view.game_over_menu_rect.collidepoint(event.pos):
+            self._restart_current_stage()
+            self.game.change_scene("menu")
 
     def _spawn_damage_numbers_from_events(self):
         if not self.model.enemy_manager:
