@@ -2,7 +2,10 @@ import random
 import math
 
 from models.enemy import Enemy
+from models.boss import Boss
 from models.pathfinder import Pathfinder
+from controllers.systems.boss_behavior_system import BossBehaviorSystem
+from controllers.systems.enemy_behavior_system import EnemyBehaviorSystem
 from settings import (
     ENEMY_MAX_COUNT,
     ENEMY_COLLISION_HEIGHT_RATIO,
@@ -32,6 +35,15 @@ class EnemyManager:
         self.current_wave_index = -1
         self.spawned_enemies = 0
         self.damage_number_events = []
+        self.behavior_systems = {
+            "melee_chase": EnemyBehaviorSystem(),
+            "forest_boss": BossBehaviorSystem(),
+        }
+
+        self.is_boss_stage = stage.stage_index == 2
+        if self.is_boss_stage:
+            self.wave_count = 1
+            self.wave_size = 1
 
         self.spawn_wave()
 
@@ -47,6 +59,10 @@ class EnemyManager:
         self.spawned_enemies = 0
         self.damage_number_events = []
 
+        self.is_boss_stage = stage.stage_index == 2
+        self.wave_count = 1 if self.is_boss_stage else ENEMY_WAVE_COUNT
+        self.wave_size = 1 if self.is_boss_stage else self._get_scaled_wave_size()
+
         self.spawn_wave()
 
     def update(self, dt):
@@ -55,14 +71,17 @@ class EnemyManager:
 
         for enemy in self.enemies:
             hp_before = self.player.hp
-            player_died = enemy.update(
+            behavior_system = self.behavior_systems[enemy.behavior_type]
+            died = behavior_system.update(
+                enemy,
                 dt,
                 self.player,
                 self.pathfinder,
                 solid_rects,
                 self.enemies,
-                self.stage.play_area
-            ) or player_died
+                self.stage.play_area,
+            )
+            player_died = died or player_died
             damage_dealt = hp_before - self.player.hp
             if damage_dealt > 0:
                 self.damage_number_events.append({
@@ -129,6 +148,13 @@ class EnemyManager:
             spawned_count += 1
 
     def spawn_enemy(self, wave_index):
+        if self.is_boss_stage:
+            boss = Boss(self.stage.play_area, self.difficulty_multiplier)
+            boss.wave_index = wave_index
+            self.enemies.append(boss)
+            self.spawned_enemies += 1
+            return boss
+
         for _ in range(80):
             x, y = self._get_border_spawn_position()
             enemy = Enemy(x, y, self.difficulty_multiplier)

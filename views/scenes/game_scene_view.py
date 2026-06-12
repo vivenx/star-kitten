@@ -2,6 +2,7 @@ import pygame
 
 from settings import HEIGHT, WIDTH
 from views.entities.enemy_view import EnemyView
+from views.entities.boss_view import BossView
 from views.entities.loot_view import LootView
 from views.entities.player_view import PlayerView
 from views.entities.stage_view import StageView
@@ -26,6 +27,7 @@ class GameSceneView:
         self.fader = Fader()
         self.stage_title = StageTitle()
         self.enemy_view = EnemyView()
+        self.boss_view = BossView()
         self.player_view = PlayerView()
         self.stage_view = StageView()
         self.loot_view = LootView()
@@ -64,6 +66,7 @@ class GameSceneView:
         self.stage_title.update(dt)
         if self.model.enemy_manager:
             self.enemy_view.update(dt, self.model.enemy_manager.enemies)
+            self.boss_view.update(dt, self.model.enemy_manager.enemies)
         self.loot_view.update(dt, self.model.loot_system)
         if self.model.player:
             self.player_view.update(dt, self.model.player)
@@ -107,6 +110,11 @@ class GameSceneView:
         drawables = []
         current_stage = self.model.stage_manager.current_stage
 
+        if self.model.enemy_manager:
+            for enemy in self.model.enemy_manager.enemies:
+                if getattr(enemy, "is_boss", False):
+                    self.boss_view.draw_hazards(self.screen, enemy)
+
         for obstacle in current_stage.obstacles:
             drawables.append((
                 obstacle.get_depth_y(),
@@ -115,9 +123,10 @@ class GameSceneView:
 
         if self.model.enemy_manager:
             for enemy in self.model.enemy_manager.enemies:
+                draw_enemy = self.boss_view.draw if getattr(enemy, "is_boss", False) else self.enemy_view.draw
                 drawables.append((
                     enemy.get_collision_rect().bottom,
-                    lambda surface, enemy=enemy: self.enemy_view.draw(surface, enemy),
+                    lambda surface, enemy=enemy, draw_enemy=draw_enemy: draw_enemy(surface, enemy),
                 ))
 
         drawables.append((self.model.player.get_collision_rect().bottom, self._draw_player))

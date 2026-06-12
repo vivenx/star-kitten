@@ -6,6 +6,7 @@ from settings import (
     OBSTACLE_MIN_DISTANCE_FROM_PLAYER, OBSTACLE_MIN_DISTANCE_FROM_EXIT,
     OBSTACLE_MIN_DISTANCE_BETWEEN, OBSTACLE_COLLISION_HEIGHT_RATIO,
     STAGE_PLAY_AREA_MARGIN, EXIT_ZONE_SIZE,
+    BOSS_STAGE_OBSTACLE_MIN_COUNT, BOSS_STAGE_OBSTACLE_MAX_COUNT,
 )
 
 
@@ -101,11 +102,16 @@ class Stage:
     def generate_obstacles(self):
         self.obstacles = []
 
-
-        count = random.randint(OBSTACLE_MIN_COUNT, OBSTACLE_MAX_COUNT)
-
-
-        types = [t for t in OBSTACLE_TYPES]
+        is_boss_stage = self.stage_index == 2
+        if is_boss_stage:
+            count = random.randint(
+                BOSS_STAGE_OBSTACLE_MIN_COUNT,
+                BOSS_STAGE_OBSTACLE_MAX_COUNT,
+            )
+            types = [t for t in OBSTACLE_TYPES if t[0] == "crystal"]
+        else:
+            count = random.randint(OBSTACLE_MIN_COUNT, OBSTACLE_MAX_COUNT)
+            types = list(OBSTACLE_TYPES)
         weights = [t[1] for t in types]
 
         attempts = 0
