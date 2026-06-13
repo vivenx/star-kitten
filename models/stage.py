@@ -78,11 +78,12 @@ class ExitZone:
 
 class Stage:
 
-    def __init__(self, stage_index, name, background_color, background_image_path=None):
+    def __init__(self, stage_index, name, background_color, background_image_path=None, biome="forest"):
         self.stage_index = stage_index
         self.name = name
         self.background_color = background_color
         self.background_image_path = background_image_path
+        self.biome = biome
 
         self.obstacles = []
         self.exit_zone = None
@@ -109,6 +110,12 @@ class Stage:
                 BOSS_STAGE_OBSTACLE_MAX_COUNT,
             )
             types = [t for t in OBSTACLE_TYPES if t[0] == "crystal"]
+        elif self.biome == "cave":
+            count = random.randint(OBSTACLE_MIN_COUNT, OBSTACLE_MAX_COUNT)
+            types = [
+                ("stone", 65, (120, 80), True, 0, 0),
+                ("crystal", 35, (80, 100), False, 10, 0.5),
+            ]
         else:
             count = random.randint(OBSTACLE_MIN_COUNT, OBSTACLE_MAX_COUNT)
             types = list(OBSTACLE_TYPES)
@@ -163,12 +170,17 @@ class Stage:
 
             if not overlaps:
                 obstacle = Obstacle(x, y, chosen_type)
+                obstacle.biome = self.biome
                 self.obstacles.append(obstacle)
 
     def _setup_exit_zone(self):
 
-        x = self.play_area.right - EXIT_ZONE_SIZE[0]
-        y = self.play_area.centery - EXIT_ZONE_SIZE[1] // 2
+        if self.stage_index == 2:
+            x = self.play_area.centerx - EXIT_ZONE_SIZE[0] // 2
+            y = self.play_area.centery - EXIT_ZONE_SIZE[1] // 2
+        else:
+            x = self.play_area.right - EXIT_ZONE_SIZE[0]
+            y = self.play_area.centery - EXIT_ZONE_SIZE[1] // 2
 
         self.exit_zone = ExitZone(x, y, EXIT_ZONE_SIZE[0], EXIT_ZONE_SIZE[1])
 

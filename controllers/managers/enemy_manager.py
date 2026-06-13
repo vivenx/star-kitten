@@ -3,9 +3,11 @@ import math
 
 from models.enemy import Enemy
 from models.boss import Boss
+from models.slime import Slime
 from models.pathfinder import Pathfinder
 from controllers.systems.boss_behavior_system import BossBehaviorSystem
 from controllers.systems.enemy_behavior_system import EnemyBehaviorSystem
+from controllers.systems.slime_behavior_system import SlimeBehaviorSystem
 from settings import (
     ENEMY_MAX_COUNT,
     ENEMY_COLLISION_HEIGHT_RATIO,
@@ -35,9 +37,11 @@ class EnemyManager:
         self.current_wave_index = -1
         self.spawned_enemies = 0
         self.damage_number_events = []
+        self.defeated_boss_positions = []
         self.behavior_systems = {
             "melee_chase": EnemyBehaviorSystem(),
             "forest_boss": BossBehaviorSystem(),
+            "slime_ranged": SlimeBehaviorSystem(),
         }
 
         self.is_boss_stage = stage.stage_index == 2
@@ -58,6 +62,7 @@ class EnemyManager:
         self.current_wave_index = -1
         self.spawned_enemies = 0
         self.damage_number_events = []
+        self.defeated_boss_positions = []
 
         self.is_boss_stage = stage.stage_index == 2
         self.wave_count = 1 if self.is_boss_stage else ENEMY_WAVE_COUNT
@@ -122,9 +127,16 @@ class EnemyManager:
             })
             if died:
                 defeated_positions.append(hit_position)
+                if getattr(enemy, "is_boss", False):
+                    self.defeated_boss_positions.append(hit_position)
 
         self.enemies = [enemy for enemy in self.enemies if enemy.is_alive()]
         return defeated_positions, hit_count
+
+    def consume_defeated_boss_positions(self):
+        positions = self.defeated_boss_positions
+        self.defeated_boss_positions = []
+        return positions
 
     def consume_damage_number_events(self):
         events = self.damage_number_events
@@ -157,7 +169,14 @@ class EnemyManager:
 
         for _ in range(80):
             x, y = self._get_border_spawn_position()
-            enemy = Enemy(x, y, self.difficulty_multiplier)
+            enemy_class = (
+                random.choice((Enemy, Slime))
+                if self.stage.biome == "cave"
+                else Enemy
+            )
+            enemy = enemy_class(x, y, self.difficulty_multiplier)
+            if self.stage.biome == "cave" and enemy_class is Enemy:
+                enemy.visual_type = "cave_skeleton"
 
             if self._can_spawn(enemy):
                 enemy.wave_index = wave_index

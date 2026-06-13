@@ -2,6 +2,7 @@ from models.stage import Stage
 from settings import (
     ARENA_COUNT,
     COLOR_FOREST_NORMAL, COLOR_FOREST_INFECTED, COLOR_FOREST_BOSS,
+    COLOR_CAVE,
     DIFFICULTY_PER_ARENA,
 )
 
@@ -20,16 +21,19 @@ class StageManager:
 
     def _setup_stages(self):
         self.stage_configs = [
-            ("Дремучий лес", COLOR_FOREST_NORMAL, "assets/images/forest/stages/stage_1.png"),
-            ("Зараженный лес", COLOR_FOREST_INFECTED, "assets/images/forest/stages/stage_2.png"),
-            ("Сердце леса", COLOR_FOREST_BOSS, "assets/images/forest/stages/stage_3.png"),
+            ("Дремучий лес", COLOR_FOREST_NORMAL, "assets/images/forest/stages/stage_1.png", "forest"),
+            ("Зараженный лес", COLOR_FOREST_INFECTED, "assets/images/forest/stages/stage_2.png", "forest"),
+            ("Сердце леса", COLOR_FOREST_BOSS, "assets/images/forest/stages/stage_3.png", "forest"),
+            ("Вход в пещеру", COLOR_CAVE, "assets/images/cave/stages/stage1.png", "cave"),
+            ("Глубины пещеры", COLOR_CAVE, "assets/images/cave/stages/stage2.png", "cave"),
+            ("Кристальный грот", COLOR_CAVE, "assets/images/cave/stages/stage3.png", "cave"),
         ]
 
         for stage_index in range(ARENA_COUNT):
             self.stages.append(self._create_stage(stage_index))
 
     def _create_stage(self, stage_index):
-        name, background_color, background_image_path = self.stage_configs[
+        name, background_color, background_image_path, biome = self.stage_configs[
             stage_index % len(self.stage_configs)
         ]
         arena_number = stage_index + 1
@@ -39,7 +43,8 @@ class StageManager:
             stage_index=stage_index,
             name=stage_name,
             background_color=background_color,
-            background_image_path=background_image_path
+            background_image_path=background_image_path,
+            biome=biome,
         )
 
     @property

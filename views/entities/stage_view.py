@@ -1,12 +1,16 @@
 import pygame
 
-from settings import COLOR_FOREST_INFECTED, COLOR_FOREST_NORMAL, HEIGHT, WIDTH
+from settings import (
+    BOSS_EXIT_IMAGE_PATH, BOSS_EXIT_SIZE,
+    COLOR_FOREST_INFECTED, COLOR_FOREST_NORMAL, HEIGHT, WIDTH,
+)
 
 
 class StageView:
     def __init__(self):
         self.background_cache = {}
         self.obstacle_cache = {}
+        self.boss_exit_image = None
 
     def draw_background(self, surface, stage):
         background = self._get_background(stage)
@@ -24,6 +28,13 @@ class StageView:
         color = COLOR_FOREST_INFECTED if "crystal" in obstacle.prefix else COLOR_FOREST_NORMAL
         pygame.draw.rect(surface, color, obstacle.rect)
 
+    def draw_boss_exit(self, surface, exit_zone):
+        if self.boss_exit_image is None:
+            image = pygame.image.load(BOSS_EXIT_IMAGE_PATH).convert_alpha()
+            self.boss_exit_image = pygame.transform.smoothscale(image, BOSS_EXIT_SIZE)
+        rect = self.boss_exit_image.get_rect(center=exit_zone.rect.center)
+        surface.blit(self.boss_exit_image, rect)
+
     def _get_background(self, stage):
         if not stage.background_image_path:
             return None
@@ -39,21 +50,22 @@ class StageView:
         return self.background_cache[stage.background_image_path]
 
     def _get_obstacle_image(self, obstacle):
-        key = (obstacle.prefix, obstacle.variant_index, obstacle.size)
+        biome = getattr(obstacle, "biome", "forest")
+        key = (biome, obstacle.prefix, obstacle.variant_index, obstacle.size)
         if key not in self.obstacle_cache:
-            image = self._load_obstacle_image(obstacle.prefix, obstacle.variant_index, obstacle.size)
+            image = self._load_obstacle_image(biome, obstacle.prefix, obstacle.variant_index, obstacle.size)
             if image is None:
-                for fallback_index in range(1, 4):
-                    image = self._load_obstacle_image(obstacle.prefix, fallback_index, obstacle.size)
+                for fallback_index in range(1, 6):
+                    image = self._load_obstacle_image(biome, obstacle.prefix, fallback_index, obstacle.size)
                     if image is not None:
                         break
             self.obstacle_cache[key] = image
         return self.obstacle_cache[key]
 
-    def _load_obstacle_image(self, prefix, variant_index, size):
+    def _load_obstacle_image(self, biome, prefix, variant_index, size):
         try:
             image = pygame.image.load(
-                f"assets/images/forest/obstacles/{prefix}_{variant_index}.png"
+                f"assets/images/{biome}/obstacles/{prefix}_{variant_index}.png"
             ).convert_alpha()
             return pygame.transform.scale(image, size)
         except FileNotFoundError:

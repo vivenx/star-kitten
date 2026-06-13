@@ -110,10 +110,16 @@ class GameSceneView:
         drawables = []
         current_stage = self.model.stage_manager.current_stage
 
+        if current_stage.stage_index == 2 and self.model.stage_cleared:
+            self.stage_view.draw_boss_exit(
+                self.screen, current_stage.exit_zone
+            )
+
         if self.model.enemy_manager:
             for enemy in self.model.enemy_manager.enemies:
                 if getattr(enemy, "is_boss", False):
                     self.boss_view.draw_hazards(self.screen, enemy)
+                self.enemy_view.draw_projectiles(self.screen, enemy)
 
         for obstacle in current_stage.obstacles:
             drawables.append((
@@ -152,6 +158,19 @@ class GameSceneView:
 
         if self.model.exit_message_timer > 0:
             self._draw_exit_message()
+        elif self.model.cave_prompt_visible:
+            self._draw_cave_prompt()
+
+    def _draw_cave_prompt(self):
+        text_surface = self.exit_message_font.render(
+            self.model.cave_prompt, True, (255, 245, 190)
+        )
+        shadow_surface = self.exit_message_font.render(
+            self.model.cave_prompt, True, (20, 20, 20)
+        )
+        text_rect = text_surface.get_rect(center=(WIDTH // 2, HEIGHT - 80))
+        self.screen.blit(shadow_surface, text_rect.move(2, 2))
+        self.screen.blit(text_surface, text_rect)
 
     def _draw_exit_message(self):
         text_surface = self.exit_message_font.render(

@@ -20,6 +20,9 @@ class GameSceneController:
                 continue
 
             if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_f and self._can_enter_boss_exit():
+                    self._start_stage_transition()
+                    continue
                 if event.key == pygame.K_z:
                     self.model.skill_tree_open = not self.model.skill_tree_open
                     continue
@@ -196,16 +199,43 @@ class GameSceneController:
             return
 
         player_collision_rect = self.model.player.get_collision_rect()
-        if not current_stage.exit_zone.rect.colliderect(player_collision_rect):
+        is_inside = current_stage.exit_zone.rect.colliderect(player_collision_rect)
+        self.model.cave_prompt_visible = False
+        if not is_inside:
             return
 
         if self.model.enemy_manager and not self.model.enemy_manager.is_stage_cleared():
             self.model.exit_message_timer = self.model.exit_lock_message_time
             return
 
+        if current_stage.stage_index == 2:
+            self.model.cave_prompt_visible = self.model.stage_manager.has_next_stage
+            return
+
         if self.model.stage_manager.can_enter_exit_zone():
-            if self.model.stage_manager.start_transition(self.model.player):
-                self.view.start_stage_transition()
+            self._start_stage_transition()
+
+    def _can_enter_boss_exit(self):
+        if (
+            not self.model.player
+            or not self.model.stage_manager
+            or self.model.skill_tree_open
+        ):
+            return False
+        stage = self.model.stage_manager.current_stage
+        return (
+            stage.stage_index == 2
+            and self.model.enemy_manager.is_stage_cleared()
+            and stage.exit_zone.rect.colliderect(self.model.player.get_collision_rect())
+            and self.model.stage_manager.can_enter_exit_zone()
+        )
+
+    def _start_stage_transition(self):
+        if self.model.stage_manager.start_transition(self.model.player):
+            self.model.cave_prompt_visible = False
+            self.view.start_stage_transition()
+            return True
+        return False
 
     def _sync_stage_change(self):
         if self.model.stage_manager.current_stage_index == self.model.current_stage_index:

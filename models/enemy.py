@@ -19,6 +19,7 @@ from settings import (
 
 class Enemy(pygame.sprite.Sprite):
     behavior_type = "melee_chase"
+    visual_type = "skeleton"
 
     def __init__(self, x, y, difficulty_multiplier=1.0):
         super().__init__()

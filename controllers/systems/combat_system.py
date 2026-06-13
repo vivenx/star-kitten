@@ -12,6 +12,7 @@ from settings import (
     ATTACK_WAVE_WIDTH,
     PLAYER_ATTACK_RANGE,
     PLAYER_ATTACK_WIDTH,
+    BOSS_STAR_REWARD,
 )
 
 
@@ -43,7 +44,7 @@ class CombatSystem:
             player.attack_damage
         )
         self._queue_slash_visual(attack_rect, player.direction)
-        loot_system.spawn_enemy_drops(defeated_positions)
+        self._spawn_drops(enemy_manager, loot_system, defeated_positions)
         on_damage_events()
         on_stage_clear()
 
@@ -112,7 +113,7 @@ class CombatSystem:
 
             defeated_positions, _ = enemy_manager.damage_enemies_with_result(hit["rect"], hit["damage"])
             self._queue_slash_visual(hit["rect"], hit["direction"], color=(255, 225, 120))
-            loot_system.spawn_enemy_drops(defeated_positions)
+            self._spawn_drops(enemy_manager, loot_system, defeated_positions)
             on_damage_events()
             on_stage_clear()
 
@@ -133,11 +134,23 @@ class CombatSystem:
                 wave.damage,
                 wave.hit_enemy_ids
             )
-            loot_system.spawn_enemy_drops(defeated_positions)
+            self._spawn_drops(enemy_manager, loot_system, defeated_positions)
             on_damage_events()
             on_stage_clear()
 
         self.energy_waves = [wave for wave in self.energy_waves if wave.is_alive()]
+
+    @staticmethod
+    def _spawn_drops(enemy_manager, loot_system, defeated_positions):
+        boss_positions = enemy_manager.consume_defeated_boss_positions()
+        boss_positions_set = set(boss_positions)
+        regular_positions = [
+            position for position in defeated_positions
+            if position not in boss_positions_set
+        ]
+        loot_system.spawn_enemy_drops(regular_positions)
+        loot_system.spawn_xp_orbs(boss_positions)
+        loot_system.spawn_guaranteed_star_orbs(boss_positions, BOSS_STAR_REWARD)
 
     def clear(self):
         self.attack_visual_events = []

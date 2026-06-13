@@ -18,7 +18,11 @@ class EnemyView:
     ACTION_DURATION = 0.25
 
     def __init__(self):
-        self.sprites = self._load_sprites()
+        self.sprites = {
+            "skeleton": self._load_sprites("assets/images/forest/enemies/skeleton"),
+            "cave_skeleton": self._load_sprites("assets/images/cave/enemies/skeleton"),
+            "slime": self._load_sprites("assets/images/cave/enemies/slime"),
+        }
         self.animation_states = {}
 
     def update(self, dt, enemies):
@@ -37,8 +41,15 @@ class EnemyView:
         surface.blit(image, enemy.rect)
         self._draw_health_bar(surface, enemy)
 
-    def _load_sprites(self):
-        base_path = "assets/images/forest/enemies/skeleton"
+    def draw_projectiles(self, surface, enemy):
+        for projectile in getattr(enemy, "projectiles", []):
+            glow = pygame.Surface((46, 46), pygame.SRCALPHA)
+            pygame.draw.circle(glow, (145, 55, 230, 65), (23, 23), 22)
+            pygame.draw.circle(glow, (185, 75, 255, 210), (23, 23), 13)
+            pygame.draw.circle(glow, (235, 180, 255, 255), (19, 19), 5)
+            surface.blit(glow, glow.get_rect(center=projectile.rect.center))
+
+    def _load_sprites(self, base_path):
         walk_right = self._load_animation(os.path.join(base_path, "right", "walk"))
         walk_left = self._load_animation(os.path.join(base_path, "left", "walk"))
         damage_right = self._load_animation(os.path.join(base_path, "right", "damage"))
@@ -131,7 +142,8 @@ class EnemyView:
             if state["action"] == "damage"
             else self.ATTACK_FRAME_TIME
         )
-        frames = self.sprites[state["action"]][enemy.direction]
+        sprites = self.sprites[getattr(enemy, "visual_type", "skeleton")]
+        frames = sprites[state["action"]][enemy.direction]
         if state["action_timer"] >= frame_time:
             state["action_timer"] = 0.0
             state["action_frame"] = (state["action_frame"] + 1) % len(frames)
@@ -149,18 +161,20 @@ class EnemyView:
             return
 
         state["walk_timer"] += dt
-        frames = self.sprites["walk"][enemy.direction]
+        sprites = self.sprites[getattr(enemy, "visual_type", "skeleton")]
+        frames = sprites["walk"][enemy.direction]
         if state["walk_timer"] >= self.WALK_FRAME_TIME:
             state["walk_timer"] = 0.0
             state["walk_frame"] = (state["walk_frame"] + 1) % len(frames)
 
     def _get_current_image(self, enemy):
         state = self._get_state(enemy)
+        sprites = self.sprites[getattr(enemy, "visual_type", "skeleton")]
         if state["action"]:
-            frames = self.sprites[state["action"]][enemy.direction]
+            frames = sprites[state["action"]][enemy.direction]
             return frames[state["action_frame"]]
 
-        frames = self.sprites["walk"][enemy.direction]
+        frames = sprites["walk"][enemy.direction]
         return frames[state["walk_frame"]]
 
     def _draw_health_bar(self, surface, enemy):

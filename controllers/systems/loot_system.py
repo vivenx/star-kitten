@@ -1,4 +1,5 @@
 import random
+import math
 
 from models.orbs.star_orb import StarOrb
 from models.orbs.xp_orb import XPOrb
@@ -18,6 +19,16 @@ class LootSystem:
         for position in positions:
             if random.random() < STAR_DROP_CHANCE:
                 self.star_orbs.append(StarOrb(position[0], position[1]))
+
+    def spawn_guaranteed_star_orbs(self, positions, count_per_position=1):
+        for position in positions:
+            for index in range(count_per_position):
+                angle = math.tau * index / count_per_position
+                radius = 52
+                self.star_orbs.append(StarOrb(
+                    position[0] + math.cos(angle) * radius,
+                    position[1] + math.sin(angle) * radius,
+                ))
 
     def spawn_enemy_drops(self, defeated_positions):
         self.spawn_xp_orbs(defeated_positions)

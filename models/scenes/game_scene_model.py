@@ -21,6 +21,8 @@ class GameSceneModel:
         self.stage_cleared = False
         self.exit_message = "Сначала уничтожьте всех врагов"
         self.exit_message_timer = 0.0
+        self.cave_prompt_visible = False
+        self.cave_prompt = "Нажмите F, чтобы спуститься в пещеру"
         self.exit_lock_message_time = EXIT_LOCK_MESSAGE_TIME
         self.skill_tree_open = False
         self.game_over = False
@@ -54,6 +56,7 @@ class GameSceneModel:
         self.damage_numbers = []
         self.combat_system.clear()
         self.stage_cleared = False
+        self.cave_prompt_visible = False
 
     def reset_enemy_manager_for_current_stage(self):
         if not self.enemy_manager:
