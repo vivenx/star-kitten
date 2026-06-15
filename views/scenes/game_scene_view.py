@@ -117,7 +117,7 @@ class GameSceneView:
 
         if self.model.enemy_manager:
             for enemy in self.model.enemy_manager.enemies:
-                if getattr(enemy, "is_boss", False):
+                if getattr(enemy, "behavior_type", None) == "forest_boss":
                     self.boss_view.draw_hazards(self.screen, enemy)
                 self.enemy_view.draw_projectiles(self.screen, enemy)
 
@@ -129,7 +129,11 @@ class GameSceneView:
 
         if self.model.enemy_manager:
             for enemy in self.model.enemy_manager.enemies:
-                draw_enemy = self.boss_view.draw if getattr(enemy, "is_boss", False) else self.enemy_view.draw
+                draw_enemy = (
+                    self.boss_view.draw
+                    if getattr(enemy, "behavior_type", None) == "forest_boss"
+                    else self.enemy_view.draw
+                )
                 drawables.append((
                     enemy.get_collision_rect().bottom,
                     lambda surface, enemy=enemy, draw_enemy=draw_enemy: draw_enemy(surface, enemy),
@@ -158,15 +162,20 @@ class GameSceneView:
 
         if self.model.exit_message_timer > 0:
             self._draw_exit_message()
+        elif self.model.final_star_prompt_visible:
+            self._draw_prompt(self.model.final_star_prompt)
         elif self.model.cave_prompt_visible:
             self._draw_cave_prompt()
 
     def _draw_cave_prompt(self):
+        self._draw_prompt(self.model.cave_prompt)
+
+    def _draw_prompt(self, text):
         text_surface = self.exit_message_font.render(
-            self.model.cave_prompt, True, (255, 245, 190)
+            text, True, (255, 245, 190)
         )
         shadow_surface = self.exit_message_font.render(
-            self.model.cave_prompt, True, (20, 20, 20)
+            text, True, (20, 20, 20)
         )
         text_rect = text_surface.get_rect(center=(WIDTH // 2, HEIGHT - 80))
         self.screen.blit(shadow_surface, text_rect.move(2, 2))

@@ -22,6 +22,27 @@ class EnemyView:
             "skeleton": self._load_sprites("assets/images/forest/enemies/skeleton"),
             "cave_skeleton": self._load_sprites("assets/images/cave/enemies/skeleton"),
             "slime": self._load_sprites("assets/images/cave/enemies/slime"),
+            "cave_slime_boss": self._load_flat_sprites(
+                "assets/images/cave/boss/stages_boss",
+                [
+                    "boss_slime.png",
+                    "boss_slime(1).png",
+                    "boss_slime(2).png",
+                    "boss_slime(3).png",
+                    "boss_slime(4).png",
+                ],
+            ),
+            **{
+                f"mini_slime_{variant}": self._load_flat_sprites(
+                    f"assets/images/cave/boss/minislimes/{variant}",
+                    [
+                        f"minislime{variant}.png",
+                        f"minislime{variant}(1).png",
+                        f"minislime{variant}(2).png",
+                    ],
+                )
+                for variant in range(1, 4)
+            },
         }
         self.animation_states = {}
 
@@ -38,6 +59,8 @@ class EnemyView:
 
     def draw(self, surface, enemy):
         image = self._get_current_image(enemy)
+        if image.get_size() != enemy.rect.size:
+            image = pygame.transform.smoothscale(image, enemy.rect.size)
         surface.blit(image, enemy.rect)
         self._draw_health_bar(surface, enemy)
 
@@ -92,6 +115,19 @@ class EnemyView:
             )
             for file_name in files
         ]
+
+    @staticmethod
+    def _load_flat_sprites(folder_path, names):
+        frames = [
+            pygame.image.load(os.path.join(folder_path, name)).convert_alpha()
+            for name in names
+        ]
+        directional = {"right": frames, "left": frames}
+        return {
+            "walk": directional,
+            "damage": directional,
+            "attack": directional,
+        }
 
     def _get_frame_number(self, file_name):
         match = re.search(r"\((\d+)\)|(\d+)", file_name)
@@ -170,6 +206,9 @@ class EnemyView:
     def _get_current_image(self, enemy):
         state = self._get_state(enemy)
         sprites = self.sprites[getattr(enemy, "visual_type", "skeleton")]
+        if getattr(enemy, "visual_type", None) == "cave_slime_boss":
+            frames = sprites["walk"]["right"]
+            return frames[min(enemy.summon_count, len(frames) - 1)]
         if state["action"]:
             frames = sprites[state["action"]][enemy.direction]
             return frames[state["action_frame"]]

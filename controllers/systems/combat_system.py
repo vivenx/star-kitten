@@ -143,7 +143,8 @@ class CombatSystem:
     @staticmethod
     def _spawn_drops(enemy_manager, loot_system, defeated_positions):
         boss_positions = enemy_manager.consume_defeated_boss_positions()
-        boss_positions_set = set(boss_positions)
+        cave_boss_positions = enemy_manager.consume_defeated_cave_boss_positions()
+        boss_positions_set = set(boss_positions + cave_boss_positions)
         regular_positions = [
             position for position in defeated_positions
             if position not in boss_positions_set
@@ -151,6 +152,7 @@ class CombatSystem:
         loot_system.spawn_enemy_drops(regular_positions)
         loot_system.spawn_xp_orbs(boss_positions)
         loot_system.spawn_guaranteed_star_orbs(boss_positions, BOSS_STAR_REWARD)
+        loot_system.spawn_boss_star(cave_boss_positions)
 
     def clear(self):
         self.attack_visual_events = []

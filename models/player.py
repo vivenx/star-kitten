@@ -34,7 +34,7 @@ class Player(pygame.sprite.Sprite):
         self.max_hp = PLAYER_MAX_HP
         self.hp = self.max_hp
         self.attack_damage = PLAYER_ATTACK_DAMAGE
-        self.level = 0
+        self.level = 1
         self.xp = 0
         self.stars = 0
         self.unlocked_skills = set()

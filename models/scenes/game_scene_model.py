@@ -22,6 +22,9 @@ class GameSceneModel:
         self.exit_message = "Сначала уничтожьте всех врагов"
         self.exit_message_timer = 0.0
         self.cave_prompt_visible = False
+        self.final_star_prompt_visible = False
+        self.final_star_prompt = "Нажмите F, чтобы забрать Финальную звезду"
+        self.final_cutscene_requested = False
         self.cave_prompt = "Нажмите F, чтобы спуститься в пещеру"
         self.exit_lock_message_time = EXIT_LOCK_MESSAGE_TIME
         self.skill_tree_open = False
@@ -57,6 +60,8 @@ class GameSceneModel:
         self.combat_system.clear()
         self.stage_cleared = False
         self.cave_prompt_visible = False
+        self.final_star_prompt_visible = False
+        self.final_cutscene_requested = False
 
     def reset_enemy_manager_for_current_stage(self):
         if not self.enemy_manager:

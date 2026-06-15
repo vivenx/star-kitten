@@ -20,6 +20,8 @@ class GameSceneController:
                 continue
 
             if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_f and self._collect_final_star():
+                    continue
                 if event.key == pygame.K_f and self._can_enter_boss_exit():
                     self._start_stage_transition()
                     continue
@@ -55,6 +57,7 @@ class GameSceneController:
             if self.model.game_over:
                 return
             self._update_enemies(dt)
+            self._update_final_star_prompt()
             self._check_exit_zone()
 
         self._sync_stage_change()
@@ -122,6 +125,28 @@ class GameSceneController:
             self._on_player_death
         )
         self.model.loot_system.collect_for_player(self.model.player)
+
+    def _update_final_star_prompt(self):
+        self.model.final_star_prompt_visible = (
+            self.model.player is not None
+            and self.model.loot_system.has_interactive_star_near(self.model.player)
+        )
+
+    def _collect_final_star(self):
+        if self.model.skill_tree_open or not self.model.player:
+            return False
+        orb = self.model.loot_system.collect_interactive_star(self.model.player)
+        if orb:
+            self.model.final_star_prompt_visible = False
+            if orb.triggers_cutscene:
+                self._request_final_cutscene()
+        return orb is not None
+
+    def _request_final_cutscene(self):
+        self.model.final_cutscene_requested = True
+        # Adding a scene under this key is enough to enable the transition.
+        if "final_cutscene" in self.game.scenes:
+            self.game.change_scene("final_cutscene")
 
     def _update_enemies(self, dt):
         if not self.model.enemy_manager:

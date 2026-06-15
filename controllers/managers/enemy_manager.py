@@ -4,10 +4,12 @@ import math
 from models.enemy import Enemy
 from models.boss import Boss
 from models.slime import Slime
+from models.cave_slime_boss import CaveSlimeBoss
 from models.pathfinder import Pathfinder
 from controllers.systems.boss_behavior_system import BossBehaviorSystem
 from controllers.systems.enemy_behavior_system import EnemyBehaviorSystem
 from controllers.systems.slime_behavior_system import SlimeBehaviorSystem
+from controllers.systems.cave_slime_boss_behavior_system import CaveSlimeBossBehaviorSystem
 from settings import (
     ENEMY_MAX_COUNT,
     ENEMY_COLLISION_HEIGHT_RATIO,
@@ -38,13 +40,15 @@ class EnemyManager:
         self.spawned_enemies = 0
         self.damage_number_events = []
         self.defeated_boss_positions = []
+        self.defeated_cave_boss_positions = []
         self.behavior_systems = {
             "melee_chase": EnemyBehaviorSystem(),
             "forest_boss": BossBehaviorSystem(),
             "slime_ranged": SlimeBehaviorSystem(),
+            "cave_slime_boss": CaveSlimeBossBehaviorSystem(),
         }
 
-        self.is_boss_stage = stage.stage_index == 2
+        self.is_boss_stage = stage.stage_index in (2, 5)
         if self.is_boss_stage:
             self.wave_count = 1
             self.wave_size = 1
@@ -63,8 +67,9 @@ class EnemyManager:
         self.spawned_enemies = 0
         self.damage_number_events = []
         self.defeated_boss_positions = []
+        self.defeated_cave_boss_positions = []
 
-        self.is_boss_stage = stage.stage_index == 2
+        self.is_boss_stage = stage.stage_index in (2, 5)
         self.wave_count = 1 if self.is_boss_stage else ENEMY_WAVE_COUNT
         self.wave_size = 1 if self.is_boss_stage else self._get_scaled_wave_size()
 
@@ -128,7 +133,10 @@ class EnemyManager:
             if died:
                 defeated_positions.append(hit_position)
                 if getattr(enemy, "is_boss", False):
-                    self.defeated_boss_positions.append(hit_position)
+                    if isinstance(enemy, CaveSlimeBoss):
+                        self.defeated_cave_boss_positions.append(hit_position)
+                    else:
+                        self.defeated_boss_positions.append(hit_position)
 
         self.enemies = [enemy for enemy in self.enemies if enemy.is_alive()]
         return defeated_positions, hit_count
@@ -136,6 +144,11 @@ class EnemyManager:
     def consume_defeated_boss_positions(self):
         positions = self.defeated_boss_positions
         self.defeated_boss_positions = []
+        return positions
+
+    def consume_defeated_cave_boss_positions(self):
+        positions = self.defeated_cave_boss_positions
+        self.defeated_cave_boss_positions = []
         return positions
 
     def consume_damage_number_events(self):
@@ -161,7 +174,8 @@ class EnemyManager:
 
     def spawn_enemy(self, wave_index):
         if self.is_boss_stage:
-            boss = Boss(self.stage.play_area, self.difficulty_multiplier)
+            boss_class = CaveSlimeBoss if self.stage.stage_index == 5 else Boss
+            boss = boss_class(self.stage.play_area, self.difficulty_multiplier)
             boss.wave_index = wave_index
             self.enemies.append(boss)
             self.spawned_enemies += 1

@@ -5,6 +5,7 @@ import pygame
 from settings import (
     STAR_ORB_GLOW_COLOR,
     STAR_ORB_IMAGE_PATH,
+    FINAL_STAR_IMAGE_PATH,
     XP_ORB_COLOR,
     XP_ORB_GLOW_COLOR,
 )
@@ -13,6 +14,7 @@ from settings import (
 class LootView:
     def __init__(self):
         self.star_image = None
+        self.final_star_image = None
         self.orb_animation_times = {}
 
     def update(self, dt, loot_system):
@@ -43,9 +45,16 @@ class LootView:
         pygame.draw.circle(surface, (230, 250, 255), center, max(2, orb.radius // 3))
 
     def _draw_star_orb(self, surface, orb):
-        if self.star_image is None:
-            source = pygame.image.load(STAR_ORB_IMAGE_PATH).convert_alpha()
-            self.star_image = pygame.transform.smoothscale(source, (orb.size, orb.size))
+        if orb.image_path == FINAL_STAR_IMAGE_PATH:
+            if self.final_star_image is None:
+                source = pygame.image.load(FINAL_STAR_IMAGE_PATH).convert_alpha()
+                self.final_star_image = pygame.transform.smoothscale(source, (orb.size, orb.size))
+            star_image = self.final_star_image
+        else:
+            if self.star_image is None:
+                source = pygame.image.load(STAR_ORB_IMAGE_PATH).convert_alpha()
+                self.star_image = pygame.transform.smoothscale(source, (orb.size, orb.size))
+            star_image = self.star_image
 
         animation_time = self.orb_animation_times.get(id(orb), 0.0)
         pulse = (math.sin(animation_time * 6.0) + 1.0) * 0.5
@@ -61,5 +70,5 @@ class LootView:
         )
         surface.blit(glow_surface, glow_surface.get_rect(center=center))
 
-        image_rect = self.star_image.get_rect(center=center)
-        surface.blit(self.star_image, image_rect)
+        image_rect = star_image.get_rect(center=center)
+        surface.blit(star_image, image_rect)
