@@ -73,3 +73,50 @@ class GameSceneModel:
             self.stage_manager.difficulty_multiplier,
             self.stage_manager.current_stage_index
         )
+
+    def restore_save_data(self, save_data):
+        stage_index = save_data.get("stage_index")
+        player_progress = save_data.get("player")
+        if (
+            not isinstance(stage_index, int)
+            or not 0 <= stage_index < len(self.stage_manager.stages)
+            or not isinstance(player_progress, dict)
+        ):
+            return False
+
+        required_fields = {"level", "xp", "max_hp", "attack_damage"}
+        if not required_fields.issubset(player_progress):
+            return False
+        numeric_fields = ("level", "xp", "stars", "max_hp", "attack_damage")
+        if any(
+            field in player_progress
+            and (
+                not isinstance(player_progress[field], (int, float))
+                or isinstance(player_progress[field], bool)
+                or player_progress[field] < 0
+            )
+            for field in numeric_fields
+        ):
+            return False
+        unlocked_skills = player_progress.get("unlocked_skills", [])
+        if not isinstance(unlocked_skills, (list, tuple)) or not all(
+            isinstance(skill_id, str) for skill_id in unlocked_skills
+        ):
+            return False
+
+        self.stage_manager.current_stage_index = stage_index
+        self.current_stage_index = stage_index
+        self.stage_manager.current_stage.generate_obstacles()
+        spawn = self.stage_manager.current_stage.player_spawn
+        self.player.set_position(spawn.x, spawn.y)
+        try:
+            self.player.restore_progress_snapshot(player_progress)
+        except (KeyError, TypeError, ValueError):
+            return False
+        self.player.hp = self.player.max_hp
+        self.reset_runtime_stage_state()
+        self.reset_enemy_manager_for_current_stage()
+        self.stage_manager.stage_title_events = []
+        self.stage_manager._queue_stage_intro()
+        self.save_stage_start_progress()
+        return True

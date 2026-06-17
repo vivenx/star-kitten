@@ -9,10 +9,13 @@ class GameSceneController:
         self.game = game
         self.model = model
         self.view = view
+        self.autosave_timer = 0.0
+        self.autosave_interval = 5.0
 
     def handle_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                self.game.save_manager.save(self.model)
                 self.game.running = False
 
             if self.model.game_over:
@@ -29,6 +32,7 @@ class GameSceneController:
                     self.model.skill_tree_open = not self.model.skill_tree_open
                     continue
                 if event.key == pygame.K_ESCAPE:
+                    self.game.save_manager.save(self.model)
                     self.game.change_scene("menu")
 
             if self.model.skill_tree_open:
@@ -45,6 +49,11 @@ class GameSceneController:
 
         if dt is None:
             dt = self.game.clock.get_time() / 1000.0
+
+        self.autosave_timer += dt
+        if self.autosave_timer >= self.autosave_interval:
+            self.game.save_manager.save(self.model)
+            self.autosave_timer = 0.0
 
         if self.model.stage_manager:
             self.model.stage_manager.update(dt)
@@ -271,3 +280,4 @@ class GameSceneController:
         self.view.reset_runtime_stage_state()
         self.model.reset_enemy_manager_for_current_stage()
         self.model.save_stage_start_progress()
+        self.game.save_manager.save(self.model)

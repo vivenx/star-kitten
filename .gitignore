@@ -23,3 +23,7 @@ dist/
 Thumbs.db
 
 *.log
+
+# Local game progress
+savegame.json
+savegame.json.tmp

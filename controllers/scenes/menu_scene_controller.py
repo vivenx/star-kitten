@@ -2,9 +2,10 @@ import pygame
 
 
 class MenuSceneController:
-    def __init__(self, game, model):
+    def __init__(self, game, model, view):
         self.game = game
         self.model = model
+        self.view = view
 
     def handle_events(self):
         for event in pygame.event.get():
@@ -12,13 +13,31 @@ class MenuSceneController:
                 self.game.running = False
 
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                mouse_pos = pygame.mouse.get_pos()
+                mouse_pos = event.pos
+
+                if self.model.new_game_confirmation_visible:
+                    if self.view.confirm_yes_rect.collidepoint(mouse_pos):
+                        self.model.new_game_confirmation_visible = False
+                        self.game.start_new_game()
+                    elif self.view.confirm_no_rect.collidepoint(mouse_pos):
+                        self.model.new_game_confirmation_visible = False
+                    continue
 
                 if self._point_in_polygon(mouse_pos, self.model.start_button_points):
-                    self.game.change_scene("game")
+                    self.model.new_game_confirmation_visible = True
 
-                if self._point_in_polygon(mouse_pos, self.model.exit_button_points):
+                elif self._point_in_polygon(mouse_pos, self.model.continue_button_points):
+                    self.game.continue_game()
+
+                elif self._point_in_polygon(mouse_pos, self.model.exit_button_points):
                     self.game.running = False
+
+            if event.type == pygame.KEYDOWN and self.model.new_game_confirmation_visible:
+                if event.key in (pygame.K_ESCAPE, pygame.K_n):
+                    self.model.new_game_confirmation_visible = False
+                elif event.key in (pygame.K_RETURN, pygame.K_y):
+                    self.model.new_game_confirmation_visible = False
+                    self.game.start_new_game()
 
     def update(self):
         pass

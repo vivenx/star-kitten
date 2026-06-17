@@ -6,8 +6,8 @@ from views.scenes.menu_scene_view import MenuSceneView
 class MenuScene:
     def __init__(self, game):
         self.model = MenuSceneModel()
-        self.controller = MenuSceneController(game, self.model)
         self.view = MenuSceneView(game.screen)
+        self.controller = MenuSceneController(game, self.model, self.view)
 
     def handle_events(self):
         self.controller.handle_events()
@@ -16,4 +16,4 @@ class MenuScene:
         self.controller.update()
 
     def draw(self):
-        self.view.draw()
+        self.view.draw(self.model.new_game_confirmation_visible)
