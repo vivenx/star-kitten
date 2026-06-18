@@ -12,6 +12,7 @@ from views.transitions.fader import Fader
 from views.transitions.stage_title import StageTitle
 from views.ui.health_bar import HealthBar
 from views.ui.skill_tree_ui import SkillTreeUI
+from views.ui.skill_cooldown_ui import SkillCooldownUI
 from views.ui.xp_bar import XPBar
 
 
@@ -23,6 +24,7 @@ class GameSceneView:
         self.xp_bar = XPBar(18, 74)
         self.stage_clear_message = StageClearMessage()
         self.skill_tree_ui = SkillTreeUI()
+        self.skill_cooldown_ui = SkillCooldownUI()
         self.exit_message_font = pygame.font.Font(None, 48)
         self.fader = Fader()
         self.stage_title = StageTitle()
@@ -157,6 +159,7 @@ class GameSceneView:
 
         if self.model.player:
             self.xp_bar.draw(self.screen, self.model.player)
+            self.skill_cooldown_ui.draw(self.screen, self.model.player)
 
         self.stage_clear_message.draw(self.screen)
 

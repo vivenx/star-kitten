@@ -31,6 +31,9 @@ class GameSceneController:
                 if event.key == pygame.K_z:
                     self.model.skill_tree_open = not self.model.skill_tree_open
                     continue
+                if event.key == pygame.K_r and not self.model.skill_tree_open:
+                    self.model.player.use_heal_skill()
+                    continue
                 if event.key == pygame.K_ESCAPE:
                     self.game.save_manager.save(self.model)
                     self.game.change_scene("menu")

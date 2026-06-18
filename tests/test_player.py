@@ -4,6 +4,10 @@ from models.player import Player
 from settings import (
     BASE_REQUIRED_XP,
     DAMAGE_PER_LEVEL,
+    DEFENSE_HP_BONUS,
+    DEFENSE_SHIELD_COOLDOWN,
+    FAIRY_HEAL_AMOUNT,
+    FAIRY_HEAL_FAST_COOLDOWN,
     HP_PER_LEVEL,
     PLAYER_ATTACK_DAMAGE,
     PLAYER_MAX_HP,
@@ -71,6 +75,35 @@ class PlayerTest(unittest.TestCase):
         player.update_cooldown(player.damage_cooldown_max)
 
         self.assertIs(player.invincible, False)
+
+    def test_healing_branch_uses_reduced_cooldown_and_auto_rescue(self):
+        player = Player(10, 20)
+        player.unlocked_skills.update(
+            {"fairy_heal", "fairy_cooldown", "fairy_rescue"}
+        )
+        player.hp = 20
+
+        player.take_damage(1)
+
+        self.assertEqual(player.hp, 19 + FAIRY_HEAL_AMOUNT)
+        self.assertEqual(player.heal_cooldown, FAIRY_HEAL_FAST_COOLDOWN)
+        self.assertIs(player.use_heal_skill(), False)
+
+    def test_defense_branch_adds_hp_and_blocks_one_hit_per_cooldown(self):
+        player = Player(10, 20)
+        player.stars = 15
+
+        self.assertIs(player.unlock_skill("defense_hp", 5), True)
+        self.assertEqual(player.max_hp, PLAYER_MAX_HP + DEFENSE_HP_BONUS)
+        self.assertEqual(player.hp, player.max_hp)
+        self.assertIs(player.unlock_skill("defense_shield", 10), True)
+
+        player.take_damage(25)
+        self.assertEqual(player.hp, player.max_hp)
+        self.assertEqual(player.shield_cooldown, DEFENSE_SHIELD_COOLDOWN)
+
+        player.take_damage(25)
+        self.assertEqual(player.hp, player.max_hp - 25)
 
 
 if __name__ == "__main__":

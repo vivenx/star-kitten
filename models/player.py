@@ -3,7 +3,9 @@ from settings import (
     PLAYER_SPEED, PLAYER_SIZE, PLAYER_MAX_HP, PLAYER_COLLISION_HEIGHT_RATIO,
     PLAYER_ATTACK_COOLDOWN, DAMAGE_COOLDOWN_DEFAULT,
     PLAYER_ATTACK_DAMAGE, BASE_REQUIRED_XP, XP_PER_LEVEL,
-    HP_PER_LEVEL, DAMAGE_PER_LEVEL
+    HP_PER_LEVEL, DAMAGE_PER_LEVEL,
+    FAIRY_HEAL_AMOUNT, FAIRY_HEAL_COOLDOWN, FAIRY_HEAL_FAST_COOLDOWN,
+    FAIRY_RESCUE_HP_THRESHOLD, DEFENSE_HP_BONUS, DEFENSE_SHIELD_COOLDOWN,
 )
 
 
@@ -36,8 +38,10 @@ class Player(pygame.sprite.Sprite):
         self.attack_damage = PLAYER_ATTACK_DAMAGE
         self.level = 1
         self.xp = 0
-        self.stars = 0
+        self.stars = 500
         self.unlocked_skills = set()
+        self.heal_cooldown = 0.0
+        self.shield_cooldown = 0.0
 
 
         self.damage_cooldown = 0.0
@@ -66,11 +70,16 @@ class Player(pygame.sprite.Sprite):
         if self.invincible:
             return False
 
+        if self.has_skill("defense_shield") and self.shield_cooldown <= 0:
+            self.shield_cooldown = DEFENSE_SHIELD_COOLDOWN
+            return False
+
         self.hp -= damage
         self.request_damage_visual()
         if self.hp <= 0:
             self.hp = 0
             return True
+        self._try_rescue()
         return False
 
     def request_damage_visual(self):
@@ -92,10 +101,39 @@ class Player(pygame.sprite.Sprite):
             if self.attack_cooldown < 0:
                 self.attack_cooldown = 0
 
+        self.heal_cooldown = max(0.0, self.heal_cooldown - dt)
+        self.shield_cooldown = max(0.0, self.shield_cooldown - dt)
+
     def heal(self, amount):
         self.hp += amount
         if self.hp > self.max_hp:
             self.hp = self.max_hp
+
+    def use_heal_skill(self):
+        if (
+            not self.has_skill("fairy_heal")
+            or self.heal_cooldown > 0
+            or self.hp <= 0
+            or self.hp >= self.max_hp
+        ):
+            return False
+
+        self.heal(FAIRY_HEAL_AMOUNT)
+        self.heal_cooldown = self.get_heal_cooldown_max()
+        return True
+
+    def get_heal_cooldown_max(self):
+        if self.has_skill("fairy_cooldown"):
+            return FAIRY_HEAL_FAST_COOLDOWN
+        return FAIRY_HEAL_COOLDOWN
+
+    def _try_rescue(self):
+        if (
+            self.has_skill("fairy_rescue")
+            and self.heal_cooldown <= 0
+            and 0 < self.hp <= self.max_hp * FAIRY_RESCUE_HP_THRESHOLD
+        ):
+            self.use_heal_skill()
 
     def get_required_xp(self):
         return BASE_REQUIRED_XP + self.level * XP_PER_LEVEL
@@ -130,6 +168,9 @@ class Player(pygame.sprite.Sprite):
 
         self.stars -= cost
         self.unlocked_skills.add(skill_id)
+        if skill_id == "defense_hp":
+            self.max_hp += DEFENSE_HP_BONUS
+            self.hp += DEFENSE_HP_BONUS
         return True
 
     def get_progress_snapshot(self):
