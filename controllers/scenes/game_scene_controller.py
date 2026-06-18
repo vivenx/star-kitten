@@ -156,9 +156,7 @@ class GameSceneController:
 
     def _request_final_cutscene(self):
         self.model.final_cutscene_requested = True
-        # Adding a scene under this key is enough to enable the transition.
-        if "final_cutscene" in self.game.scenes:
-            self.game.change_scene("final_cutscene")
+        self.game.start_final_cutscene()
 
     def _update_enemies(self, dt):
         if not self.model.enemy_manager:

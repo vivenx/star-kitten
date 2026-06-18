@@ -3,6 +3,9 @@ from settings import WIDTH, HEIGHT, FPS
 from controllers.managers.save_manager import SaveManager
 from scenes.menu_scene import MenuScene
 from scenes.game_scene import GameScene
+from scenes.intro_scene import IntroScene
+from scenes.tutorial_scene import TutorialScene
+from scenes.ending_scene import EndingScene
 
 
 class Game:
@@ -29,7 +32,22 @@ class Game:
         self.save_manager.delete()
         self.scenes["game"] = GameScene(self)
         self.save_manager.save(self.scenes["game"].model)
+        self.scenes["intro"] = IntroScene(self)
+        self.change_scene("intro")
+
+    def finish_intro(self):
+        self.scenes["tutorial"] = TutorialScene(self)
+        self.change_scene("tutorial")
+
+    def finish_tutorial(self):
         self.change_scene("game")
+
+    def start_final_cutscene(self):
+        self.scenes["final_cutscene"] = EndingScene(self)
+        self.change_scene("final_cutscene")
+
+    def finish_ending(self):
+        self.change_scene("menu")
 
     def continue_game(self):
         save_data = self.save_manager.load()
