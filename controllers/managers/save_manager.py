@@ -21,11 +21,17 @@ class SaveManager:
         data = {
             "version": self.SAVE_VERSION,
             "stage_index": model.stage_manager.current_stage_index,
+            "endless_mode": model.stage_manager.endless_mode,
             "player": model.player.get_progress_snapshot(),
         }
         data["player"]["unlocked_skills"] = list(
             data["player"]["unlocked_skills"]
         )
+        if model.stage_manager.endless_mode and model.endless_start_progress:
+            data["endless_start_progress"] = dict(model.endless_start_progress)
+            data["endless_start_progress"]["unlocked_skills"] = list(
+                data["endless_start_progress"].get("unlocked_skills", ())
+            )
 
         temporary_path = self.save_path.with_suffix(self.save_path.suffix + ".tmp")
         try:

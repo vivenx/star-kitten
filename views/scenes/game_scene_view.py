@@ -25,7 +25,7 @@ class GameSceneView:
         self.stage_clear_message = StageClearMessage()
         self.skill_tree_ui = SkillTreeUI()
         self.skill_cooldown_ui = SkillCooldownUI()
-        self.exit_message_font = pygame.font.Font(None, 48)
+        self.prompt_font = pygame.font.Font(None, 48)
         self.fader = Fader()
         self.stage_title = StageTitle()
         self.enemy_view = EnemyView()
@@ -112,7 +112,11 @@ class GameSceneView:
         drawables = []
         current_stage = self.model.stage_manager.current_stage
 
-        if current_stage.stage_index == 2 and self.model.stage_cleared:
+        if (
+            current_stage.boss_type is not None
+            and self.model.stage_cleared
+            and (current_stage.boss_type == "forest" or current_stage.endless)
+        ):
             self.stage_view.draw_boss_exit(
                 self.screen, current_stage.exit_zone
             )
@@ -163,42 +167,25 @@ class GameSceneView:
 
         self.stage_clear_message.draw(self.screen)
 
-        if self.model.exit_message_timer > 0:
-            self._draw_exit_message()
-        elif self.model.final_star_prompt_visible:
+        if self.model.final_star_prompt_visible:
             self._draw_prompt(self.model.final_star_prompt)
         elif self.model.cave_prompt_visible:
             self._draw_cave_prompt()
 
     def _draw_cave_prompt(self):
-        self._draw_prompt(self.model.cave_prompt)
+        stage = self.model.stage_manager.current_stage
+        prompt = self.model.portal_prompt if stage.endless else self.model.cave_prompt
+        self._draw_prompt(prompt)
 
     def _draw_prompt(self, text):
-        text_surface = self.exit_message_font.render(
+        text_surface = self.prompt_font.render(
             text, True, (255, 245, 190)
         )
-        shadow_surface = self.exit_message_font.render(
+        shadow_surface = self.prompt_font.render(
             text, True, (20, 20, 20)
         )
         text_rect = text_surface.get_rect(center=(WIDTH // 2, HEIGHT - 80))
         self.screen.blit(shadow_surface, text_rect.move(2, 2))
-        self.screen.blit(text_surface, text_rect)
-
-    def _draw_exit_message(self):
-        text_surface = self.exit_message_font.render(
-            self.model.exit_message,
-            True,
-            (255, 255, 255)
-        )
-        shadow_surface = self.exit_message_font.render(
-            self.model.exit_message,
-            True,
-            (20, 20, 20)
-        )
-        text_rect = text_surface.get_rect(center=(WIDTH // 2, HEIGHT - 80))
-        shadow_rect = shadow_surface.get_rect(center=(WIDTH // 2 + 2, HEIGHT - 78))
-
-        self.screen.blit(shadow_surface, shadow_rect)
         self.screen.blit(text_surface, text_rect)
 
     def _show_pending_stage_titles(self):

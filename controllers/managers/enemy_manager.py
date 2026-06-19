@@ -48,7 +48,7 @@ class EnemyManager:
             "cave_slime_boss": CaveSlimeBossBehaviorSystem(),
         }
 
-        self.is_boss_stage = stage.stage_index in (2, 5)
+        self.is_boss_stage = stage.boss_type is not None
         if self.is_boss_stage:
             self.wave_count = 1
             self.wave_size = 1
@@ -69,7 +69,7 @@ class EnemyManager:
         self.defeated_boss_positions = []
         self.defeated_cave_boss_positions = []
 
-        self.is_boss_stage = stage.stage_index in (2, 5)
+        self.is_boss_stage = stage.boss_type is not None
         self.wave_count = 1 if self.is_boss_stage else ENEMY_WAVE_COUNT
         self.wave_size = 1 if self.is_boss_stage else self._get_scaled_wave_size()
 
@@ -174,7 +174,7 @@ class EnemyManager:
 
     def spawn_enemy(self, wave_index):
         if self.is_boss_stage:
-            boss_class = CaveSlimeBoss if self.stage.stage_index == 5 else Boss
+            boss_class = CaveSlimeBoss if self.stage.boss_type == "cave" else Boss
             boss = boss_class(self.stage.play_area, self.difficulty_multiplier)
             boss.wave_index = wave_index
             self.enemies.append(boss)

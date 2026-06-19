@@ -4,7 +4,6 @@ from controllers.systems.combat_system import CombatSystem
 from controllers.systems.loot_system import LootSystem
 from controllers.systems.player_collision_system import PlayerCollisionSystem
 from models.player import Player
-from settings import EXIT_LOCK_MESSAGE_TIME
 
 
 class GameSceneModel:
@@ -18,15 +17,14 @@ class GameSceneModel:
         self.player_collision_system = PlayerCollisionSystem()
         self.current_stage_index = 0
         self.stage_start_progress = None
+        self.endless_start_progress = None
         self.stage_cleared = False
-        self.exit_message = "Сначала уничтожьте всех врагов"
-        self.exit_message_timer = 0.0
         self.cave_prompt_visible = False
         self.final_star_prompt_visible = False
         self.final_star_prompt = "Нажмите F, чтобы забрать Финальную звезду"
         self.final_cutscene_requested = False
+        self.portal_prompt = "Нажмите F, чтобы войти в портал"
         self.cave_prompt = "Нажмите F, чтобы спуститься в пещеру"
-        self.exit_lock_message_time = EXIT_LOCK_MESSAGE_TIME
         self.skill_tree_open = False
         self.game_over = False
 
@@ -34,6 +32,23 @@ class GameSceneModel:
         self._create_player()
         self._create_enemy_manager()
         self.save_stage_start_progress()
+
+    def start_endless_mode(self):
+        self.endless_start_progress = self.player.get_progress_snapshot()
+        self.stage_manager.begin_endless_mode()
+        if not self.stage_manager.load_next_stage():
+            return False
+
+        self.current_stage_index = self.stage_manager.current_stage_index
+        spawn = self.stage_manager.current_stage.player_spawn
+        self.player.set_position(spawn.x, spawn.y)
+        self.player.hp = self.player.max_hp
+        self.reset_runtime_stage_state()
+        self.reset_enemy_manager_for_current_stage()
+        self.stage_manager.stage_title_events = []
+        self.stage_manager._queue_stage_intro()
+        self.save_stage_start_progress()
+        return True
 
     def _setup_stage_manager(self):
         self.stage_manager = StageManager()
@@ -77,9 +92,12 @@ class GameSceneModel:
     def restore_save_data(self, save_data):
         stage_index = save_data.get("stage_index")
         player_progress = save_data.get("player")
+        if not isinstance(stage_index, int):
+            return False
+        if save_data.get("endless_mode"):
+            self.stage_manager.ensure_stage_exists(stage_index)
         if (
-            not isinstance(stage_index, int)
-            or not 0 <= stage_index < len(self.stage_manager.stages)
+            not 0 <= stage_index < len(self.stage_manager.stages)
             or not isinstance(player_progress, dict)
         ):
             return False
@@ -113,6 +131,20 @@ class GameSceneModel:
             self.player.restore_progress_snapshot(player_progress)
         except (KeyError, TypeError, ValueError):
             return False
+        if self.stage_manager.endless_mode:
+            endless_start_progress = save_data.get(
+                "endless_start_progress", player_progress
+            )
+            if not isinstance(endless_start_progress, dict):
+                return False
+            if not required_fields.issubset(endless_start_progress):
+                return False
+            self.endless_start_progress = {
+                **endless_start_progress,
+                "unlocked_skills": tuple(
+                    endless_start_progress.get("unlocked_skills", ())
+                ),
+            }
         self.player.hp = self.player.max_hp
         self.reset_runtime_stage_state()
         self.reset_enemy_manager_for_current_stage()

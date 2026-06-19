@@ -13,6 +13,7 @@ from settings import (
     PLAYER_ATTACK_RANGE,
     PLAYER_ATTACK_WIDTH,
     BOSS_STAR_REWARD,
+    CAVE_BOSS_ENDLESS_XP_REWARD,
 )
 
 
@@ -152,7 +153,12 @@ class CombatSystem:
         loot_system.spawn_enemy_drops(regular_positions)
         loot_system.spawn_xp_orbs(boss_positions)
         loot_system.spawn_guaranteed_star_orbs(boss_positions, BOSS_STAR_REWARD)
-        loot_system.spawn_boss_star(cave_boss_positions)
+        if getattr(enemy_manager.stage, "endless", False):
+            loot_system.spawn_guaranteed_xp_orbs(
+                cave_boss_positions, CAVE_BOSS_ENDLESS_XP_REWARD
+            )
+        else:
+            loot_system.spawn_boss_star(cave_boss_positions)
 
     def clear(self):
         self.attack_visual_events = []

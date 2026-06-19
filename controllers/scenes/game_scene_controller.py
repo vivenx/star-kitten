@@ -61,8 +61,6 @@ class GameSceneController:
         if self.model.stage_manager:
             self.model.stage_manager.update(dt)
 
-        self._update_exit_message_timer(dt)
-
         if self.model.player and not self.model.stage_manager.is_transitioning():
             self._update_player(dt)
             self._update_world_systems(dt)
@@ -84,14 +82,6 @@ class GameSceneController:
             self._update_stage_clear_state,
             self.model.stage_manager.is_transitioning(),
         )
-
-    def _update_exit_message_timer(self, dt):
-        if self.model.exit_message_timer <= 0:
-            return
-
-        self.model.exit_message_timer -= dt
-        if self.model.exit_message_timer < 0:
-            self.model.exit_message_timer = 0
 
     def _update_player(self, dt):
         keys = pygame.key.get_pressed()
@@ -175,13 +165,24 @@ class GameSceneController:
         self.model.skill_tree_open = False
 
     def _restart_current_stage(self):
+        if self.model.stage_manager.endless_mode:
+            self.model.stage_manager.reset_endless_run()
+            self.model.current_stage_index = self.model.stage_manager.current_stage_index
+
         spawn_pos = self.model.stage_manager.current_stage.player_spawn
-        self.model.player.restore_progress_snapshot(self.model.stage_start_progress)
+        progress_snapshot = (
+            self.model.endless_start_progress
+            if self.model.stage_manager.endless_mode
+            else self.model.stage_start_progress
+        )
+        self.model.player.restore_progress_snapshot(progress_snapshot)
         self.model.player.set_position(spawn_pos.x, spawn_pos.y)
         self.model.player.hp = self.model.player.max_hp
         self.model.reset_runtime_stage_state()
         self.view.reset_runtime_stage_state()
         self.model.reset_enemy_manager_for_current_stage()
+        self.model.save_stage_start_progress()
+        self.game.save_manager.save(self.model)
         self.model.game_over = False
 
     def _handle_game_over_event(self, event):
@@ -240,11 +241,15 @@ class GameSceneController:
             return
 
         if self.model.enemy_manager and not self.model.enemy_manager.is_stage_cleared():
-            self.model.exit_message_timer = self.model.exit_lock_message_time
             return
 
-        if current_stage.stage_index == 2:
+        if current_stage.boss_type == "forest":
             self.model.cave_prompt_visible = self.model.stage_manager.has_next_stage
+            return
+
+
+        if current_stage.boss_type == "cave" and current_stage.endless:
+            self.model.cave_prompt_visible = True
             return
 
         if self.model.stage_manager.can_enter_exit_zone():
@@ -259,7 +264,8 @@ class GameSceneController:
             return False
         stage = self.model.stage_manager.current_stage
         return (
-            stage.stage_index == 2
+            stage.boss_type is not None
+            and (stage.boss_type == "forest" or stage.endless)
             and self.model.enemy_manager.is_stage_cleared()
             and stage.exit_zone.rect.colliderect(self.model.player.get_collision_rect())
             and self.model.stage_manager.can_enter_exit_zone()

@@ -20,6 +20,16 @@ class LootSystem:
         for position in positions:
             self.xp_orbs.append(XPOrb(position[0], position[1]))
 
+    def spawn_guaranteed_xp_orbs(self, positions, count_per_position):
+        for position in positions:
+            for index in range(count_per_position):
+                angle = math.tau * index / count_per_position
+                radius = 35 + 4 * (index % 4)
+                self.xp_orbs.append(XPOrb(
+                    position[0] + math.cos(angle) * radius,
+                    position[1] + math.sin(angle) * radius,
+                ))
+
     def spawn_star_orbs(self, positions):
         for position in positions:
             if random.random() < STAR_DROP_CHANCE:

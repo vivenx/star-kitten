@@ -78,12 +78,24 @@ class ExitZone:
 
 class Stage:
 
-    def __init__(self, stage_index, name, background_color, background_image_path=None, biome="forest"):
+    def __init__(
+        self,
+        stage_index,
+        name,
+        background_color,
+        background_image_path=None,
+        biome="forest",
+        boss_type=None,
+        endless=False,
+    ):
         self.stage_index = stage_index
         self.name = name
         self.background_color = background_color
         self.background_image_path = background_image_path
         self.biome = biome
+        # Keep direct Stage(index, ...) construction backwards compatible.
+        self.boss_type = boss_type or ({2: "forest", 5: "cave"}.get(stage_index))
+        self.endless = endless
 
         self.obstacles = []
         self.exit_zone = None
@@ -103,7 +115,7 @@ class Stage:
     def generate_obstacles(self):
         self.obstacles = []
 
-        is_boss_stage = self.stage_index == 2
+        is_boss_stage = self.boss_type == "forest"
         if is_boss_stage:
             count = random.randint(
                 BOSS_STAGE_OBSTACLE_MIN_COUNT,
@@ -175,7 +187,7 @@ class Stage:
 
     def _setup_exit_zone(self):
 
-        if self.stage_index == 2:
+        if self.boss_type in ("forest", "cave"):
             x = self.play_area.centerx - EXIT_ZONE_SIZE[0] // 2
             y = self.play_area.centery - EXIT_ZONE_SIZE[1] // 2
         else:

@@ -47,7 +47,12 @@ class Game:
         self.change_scene("final_cutscene")
 
     def finish_ending(self):
-        self.change_scene("menu")
+        game_scene = self.scenes["game"]
+        if game_scene.model.start_endless_mode():
+            self.save_manager.save(game_scene.model)
+            self.change_scene("game")
+        else:
+            self.change_scene("menu")
 
     def continue_game(self):
         save_data = self.save_manager.load()
