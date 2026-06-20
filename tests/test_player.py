@@ -1,7 +1,7 @@
 import unittest
 
 from models.player import Player
-from settings import (
+from config import (
     BASE_REQUIRED_XP,
     DAMAGE_PER_LEVEL,
     DEFENSE_HP_BONUS,

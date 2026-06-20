@@ -2,7 +2,7 @@ import math
 
 import pygame
 
-from settings import (
+from config import (
     DEFENSE_SHIELD_COOLDOWN,
     SKILL_COOLDOWN_ICON_SIZE,
     STAGE_TITLE_FONT_PATH,
@@ -11,7 +11,7 @@ from settings import (
 
 
 class SkillCooldownUI:
-    """Cooldown icons for the two active skill-branch effects."""
+    """Отображает значки и время восстановления активных навыков."""
 
     def __init__(self):
         self.font = pygame.font.Font(STAGE_TITLE_FONT_PATH, 30)

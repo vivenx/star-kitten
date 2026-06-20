@@ -1,7 +1,7 @@
 import pygame
 
 from models.enemy import Enemy
-from settings import (
+from config import (
     BOSS_FIRST_ATTACK_DELAY,
     BOSS_MAX_HP,
     BOSS_ORB_SIZE,
@@ -10,6 +10,7 @@ from settings import (
 
 
 class BossOrb:
+    """Хранит состояние движущегося снаряда лесного босса."""
     def __init__(self, center, velocity):
         self.position = pygame.Vector2(center)
         self.velocity = pygame.Vector2(velocity)
@@ -18,6 +19,7 @@ class BossOrb:
         self.alive = True
 
 class BossSpike:
+    """Хранит состояние и фазу опасности шипа лесного босса."""
     WARNING_TIME = 0.55
     ACTIVE_TIME = 0.7
     SIZE = (70, 100)
@@ -42,6 +44,7 @@ class BossSpike:
         return self.WARNING_TIME <= self.age < self.WARNING_TIME + self.ACTIVE_TIME
 
 class Boss(Enemy):
+    """Представляет лесного босса со сферами и шипами."""
     is_boss = True
     behavior_type = "forest_boss"
 

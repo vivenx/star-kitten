@@ -1,12 +1,13 @@
 import pygame
 
-from settings import (
+from config import (
     BOSS_EXIT_IMAGE_PATH, BOSS_EXIT_SIZE,
     COLOR_FOREST_INFECTED, COLOR_FOREST_NORMAL, HEIGHT, WIDTH,
 )
 
 
 class StageView:
+    """Отображает фон, препятствия и выход текущего этапа."""
     def __init__(self):
         self.background_cache = {}
         self.obstacle_cache = {}

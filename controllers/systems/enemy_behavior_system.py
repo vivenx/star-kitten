@@ -2,6 +2,7 @@ import pygame
 
 
 class EnemyBehaviorSystem:
+    """Реализует базовое преследование и атаку обычного противника."""
     def update(self, enemy, dt, player, pathfinder, solid_rects, enemies, play_area):
         if not enemy.is_alive():
             return False
@@ -19,6 +20,17 @@ class EnemyBehaviorSystem:
 
     @staticmethod
     def _update_path(enemy, dt, player, pathfinder):
+        """Периодически обновляет путь врага к игроку с помощью алгоритма A*.
+
+        Новый маршрут строится только после завершения таймера обновления,
+        чтобы не выполнять ресурсоёмкий поиск пути на каждом кадре.
+
+        Args:
+            enemy: Враг, для которого необходимо обновить маршрут.
+            dt: Время в секундах, прошедшее с предыдущего кадра.
+            player: Игрок, позиция которого используется как цель маршрута.
+            pathfinder: Объект поиска пути, реализующий алгоритм A*.
+        """
         enemy.path_update_timer -= dt
         if enemy.path_update_timer > 0:
             return

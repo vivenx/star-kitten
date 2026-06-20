@@ -11,7 +11,7 @@ from models.boss import Boss
 from models.player import Player
 from models.stage import Stage
 from models.cave_slime_boss import CaveSlimeBoss
-from settings import CAVE_BOSS_ENDLESS_XP_REWARD
+from config import CAVE_BOSS_ENDLESS_XP_REWARD
 
 
 def make_stage(index):

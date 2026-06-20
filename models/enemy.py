@@ -2,7 +2,7 @@ import random
 
 import pygame
 
-from settings import (
+from config import (
     ENEMY_ATTACK_COOLDOWN,
     ENEMY_COLLISION_WIDTH_RATIO,
     ENEMY_COLLISION_HEIGHT_RATIO,
@@ -18,6 +18,7 @@ from settings import (
 
 
 class Enemy(pygame.sprite.Sprite):
+    """Базовая модель противника с движением, здоровьем и атакой."""
     behavior_type = "melee_chase"
     visual_type = "skeleton"
 

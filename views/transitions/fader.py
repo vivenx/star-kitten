@@ -1,8 +1,9 @@
 import pygame
-from settings import FADE_SPEED, FADE_COLOR
+from config import FADE_SPEED, FADE_COLOR
 
 
 class Fader:
+    """Создаёт плавное затемнение и осветление между состояниями сцены."""
 
     def __init__(self):
         self.fade_surface = pygame.Surface((pygame.display.get_surface().get_width(),

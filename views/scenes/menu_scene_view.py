@@ -1,9 +1,10 @@
 import pygame
 
-from settings import HEIGHT, WIDTH
+from config import HEIGHT, WIDTH
 
 
 class MenuSceneView:
+    """Отображает главное меню и диалог подтверждения новой игры."""
     def __init__(self, screen):
         self.screen = screen
         self.bg = pygame.image.load("assets/images/menu_bg.png").convert()

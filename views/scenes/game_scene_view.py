@@ -1,6 +1,6 @@
 import pygame
 
-from settings import HEIGHT, WIDTH
+from config import HEIGHT, WIDTH
 from views.entities.enemy_view import EnemyView
 from views.entities.boss_view import BossView
 from views.entities.loot_view import LootView
@@ -17,6 +17,7 @@ from views.ui.xp_bar import XPBar
 
 
 class GameSceneView:
+    """Координирует отрисовку игрового мира, интерфейса и эффектов."""
     def __init__(self, screen, model):
         self.screen = screen
         self.model = model

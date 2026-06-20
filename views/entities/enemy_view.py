@@ -4,10 +4,11 @@ import re
 
 import pygame
 
-from settings import ENEMY_SIZE
+from config import ENEMY_SIZE
 
 
 class EnemyView:
+    """Отображает обычных врагов, их анимации, снаряды и здоровье."""
     HEALTH_BAR_BACKGROUND = (60, 20, 20)
     HEALTH_BAR_FILL = (180, 40, 40)
     HEALTH_BAR_HEIGHT = 5

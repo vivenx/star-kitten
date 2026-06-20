@@ -4,7 +4,7 @@ import random
 import pygame
 
 from models.boss import BossOrb, BossSpike
-from settings import (
+from config import (
     BOSS_ATTACK_ANIMATION_DURATION,
     BOSS_ATTACK_INTERVAL,
     BOSS_ORB_COUNT,
@@ -16,6 +16,7 @@ from settings import (
 
 
 class BossBehaviorSystem:
+    """Реализует атаки и обновление поведения лесного босса."""
     def update(
         self,
         boss,

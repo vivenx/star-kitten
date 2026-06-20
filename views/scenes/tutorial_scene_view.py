@@ -1,9 +1,10 @@
 import pygame
 
-from settings import HEIGHT, WIDTH
+from config import HEIGHT, WIDTH
 
 
 class TutorialSceneView:
+    """Отображает изображение с правилами управления и обучения."""
     def __init__(self, screen):
         self.screen = screen
         image = pygame.image.load("assets/images/tutor.png").convert()

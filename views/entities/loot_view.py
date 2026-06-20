@@ -2,7 +2,7 @@ import math
 
 import pygame
 
-from settings import (
+from config import (
     STAR_ORB_GLOW_COLOR,
     STAR_ORB_IMAGE_PATH,
     FINAL_STAR_IMAGE_PATH,
@@ -12,6 +12,7 @@ from settings import (
 
 
 class LootView:
+    """Отображает сферы опыта и звёзды на игровом поле."""
     def __init__(self):
         self.star_image = None
         self.final_star_image = None

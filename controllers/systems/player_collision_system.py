@@ -2,6 +2,7 @@ import pygame
 
 
 class PlayerCollisionSystem:
+    """Обрабатывает движение и столкновения игрока с объектами этапа."""
     def handle_stage_collisions(self, player, stage, dt, on_player_death):
         if not player:
             return

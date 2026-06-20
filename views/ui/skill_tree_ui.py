@@ -1,10 +1,11 @@
 import pygame
 
 from models.skills import SKILL_TREE_NODES
-from settings import HEIGHT, STAGE_TITLE_FONT_PATH, WIDTH
+from config import HEIGHT, STAGE_TITLE_FONT_PATH, WIDTH
 
 
 class SkillTreeUI:
+    """Отображает дерево навыков и обрабатывает выбор улучшений."""
     def __init__(self):
         self.background = pygame.image.load("assets/images/skill_tree/tree.png").convert_alpha()
         lock_source = pygame.image.load("assets/images/skill_tree/lock.png").convert_alpha()

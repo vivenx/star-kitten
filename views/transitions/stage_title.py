@@ -1,6 +1,6 @@
 import pygame
 
-from settings import (
+from config import (
     HEIGHT,
     STAGE_TITLE_COLOR,
     STAGE_TITLE_FADE_TIME,
@@ -14,6 +14,7 @@ from settings import (
 
 
 class StageTitle:
+    """Показывает название и описание текущего этапа."""
     def __init__(self):
         self.title_font = pygame.font.Font(STAGE_TITLE_FONT_PATH, STAGE_TITLE_FONT_SIZE)
         self.subtitle_font = pygame.font.Font(STAGE_TITLE_FONT_PATH, STAGE_TITLE_SUBTITLE_FONT_SIZE)

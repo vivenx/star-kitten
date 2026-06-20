@@ -4,7 +4,7 @@ from pathlib import Path
 
 
 class SaveManager:
-    """Stores a single autosave using an atomic file replacement."""
+    """Сохраняет и загружает прогресс через безопасную замену JSON-файла."""
 
     SAVE_VERSION = 1
 

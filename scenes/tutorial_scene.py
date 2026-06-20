@@ -3,6 +3,7 @@ from views.scenes.tutorial_scene_view import TutorialSceneView
 
 
 class TutorialScene:
+    """Управляет отображением и завершением обучающей сцены."""
     def __init__(self, game):
         self.view = TutorialSceneView(game.screen)
         self.controller = TutorialSceneController(game)

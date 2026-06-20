@@ -1,6 +1,6 @@
 import pygame
 import random
-from settings import (
+from config import (
     WIDTH, HEIGHT,
     OBSTACLE_TYPES, OBSTACLE_VARIANT_COUNTS, OBSTACLE_MIN_COUNT, OBSTACLE_MAX_COUNT,
     OBSTACLE_MIN_DISTANCE_FROM_PLAYER, OBSTACLE_MIN_DISTANCE_FROM_EXIT,
@@ -11,8 +11,10 @@ from settings import (
 
 
 class Obstacle:
+    """Представляет препятствие с маской столкновения и игровыми свойствами."""
 
     def __init__(self, x, y, obstacle_type_data, image=None, variant_index=None):
+        """Создаёт препятствие с заданными позицией, типом и вариантом вида."""
         self.x = x
         self.y = y
         self.prefix = obstacle_type_data[0]
@@ -28,6 +30,7 @@ class Obstacle:
         self.mask = self._create_mask(image)
 
     def _create_mask(self, image=None):
+        """Создаёт маску столкновений по изображению или прямоугольной области."""
         collision_surface = pygame.Surface(self.size, pygame.SRCALPHA)
         collision_height = max(1, int(self.size[1] * OBSTACLE_COLLISION_HEIGHT_RATIO))
         collision_rect = pygame.Rect(
@@ -50,9 +53,11 @@ class Obstacle:
         return pygame.mask.from_surface(collision_surface)
 
     def collides_with_mask(self, other_rect, other_mask):
+        """Проверяет пересечение препятствия с другой маской."""
         return self.get_mask_overlap_area(other_rect, other_mask) > 0
 
     def get_mask_overlap_area(self, other_rect, other_mask):
+        """Возвращает площадь пересечения с другой маской."""
         if not self.rect.colliderect(other_rect):
             return 0
 
@@ -60,23 +65,29 @@ class Obstacle:
         return other_mask.overlap_area(self.mask, offset)
 
     def get_depth_y(self):
+        """Возвращает нижнюю координату препятствия для сортировки по глубине."""
         return self.rect.bottom
 
     def deals_damage(self):
+        """Проверяет, наносит ли препятствие урон."""
         return self.damage > 0
 
 
 class ExitZone:
+    """Представляет область перехода на следующий этап."""
 
     def __init__(self, x, y, width, height):
+        """Создаёт активную зону выхода заданного размера."""
         self.rect = pygame.Rect(x, y, width, height)
         self.active = True
 
     def contains_point(self, point):
+        """Проверяет, находится ли точка внутри зоны выхода."""
         return self.rect.collidepoint(point)
 
 
 class Stage:
+    """Хранит конфигурацию, препятствия и границы одного игрового этапа."""
 
     def __init__(
         self,
@@ -88,6 +99,7 @@ class Stage:
         boss_type=None,
         endless=False,
     ):
+        """Создаёт игровой этап и размещает на нём объекты."""
         self.stage_index = stage_index
         self.name = name
         self.background_color = background_color
@@ -113,6 +125,7 @@ class Stage:
         self.generate_obstacles()
 
     def generate_obstacles(self):
+        """Случайным образом размещает препятствия с учётом ограничений этапа."""
         self.obstacles = []
 
         is_boss_stage = self.boss_type == "forest"
@@ -186,6 +199,7 @@ class Stage:
                 self.obstacles.append(obstacle)
 
     def _setup_exit_zone(self):
+        """Размещает зону выхода и задаёт начальную позицию игрока."""
 
         if self.boss_type in ("forest", "cave"):
             x = self.play_area.centerx - EXIT_ZONE_SIZE[0] // 2
@@ -203,14 +217,18 @@ class Stage:
         )
 
     def update(self, dt):
+        """Обновляет состояние этапа за прошедший интервал времени."""
         pass
 
     def get_solid_obstacles(self):
+        """Возвращает список непроходимых препятствий."""
         return [obs for obs in self.obstacles if obs.is_solid]
 
     def get_damaging_obstacles(self):
+        """Возвращает список препятствий, наносящих урон."""
         return [obs for obs in self.obstacles if obs.deals_damage()]
 
     def regenerate_with_new_spawn(self, new_spawn_pos):
+        """Меняет точку появления игрока и заново размещает препятствия."""
         self.player_spawn = pygame.Vector2(new_spawn_pos)
         self.generate_obstacles()

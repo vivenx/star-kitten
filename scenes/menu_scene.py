@@ -4,6 +4,7 @@ from views.scenes.menu_scene_view import MenuSceneView
 
 
 class MenuScene:
+    """Объединяет модель, представление и контроллер главного меню."""
     def __init__(self, game):
         self.model = MenuSceneModel()
         self.view = MenuSceneView(game.screen)

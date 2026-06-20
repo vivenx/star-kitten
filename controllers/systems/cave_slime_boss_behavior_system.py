@@ -4,7 +4,7 @@ import random
 import pygame
 
 from models.cave_slime_boss import MiniSlime
-from settings import (
+from config import (
     BOSS_ATTACK_ANIMATION_DURATION,
     CAVE_SLIME_BOSS_ATTACK_COUNT,
     CAVE_SLIME_BOSS_ATTACK_INTERVAL,
@@ -16,6 +16,7 @@ from settings import (
 
 
 class CaveSlimeBossBehaviorSystem:
+    """Реализует поведение пещерного босса и создание мини-слизней."""
     def update(self, boss, dt, player, pathfinder, solid_rects, enemies, play_area):
         if not boss.is_alive():
             return False

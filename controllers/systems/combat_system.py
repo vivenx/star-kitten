@@ -1,6 +1,7 @@
 import pygame
+from dataclasses import dataclass
 
-from settings import (
+from config import (
     ATTACK_DOUBLE_HIT_DAMAGE_MULTIPLIER,
     ATTACK_DOUBLE_HIT_DELAY,
     ATTACK_SLASH_RANGE_MULTIPLIER,
@@ -17,23 +18,31 @@ from settings import (
 )
 
 
+@dataclass(frozen=True)
+class CombatContext:
+    """Объединяет зависимости, необходимые для обработки атаки игрока."""
+
+    player: object
+    enemy_manager: object
+    loot_system: object
+    on_damage_events: object
+    on_stage_clear: object
+    is_transitioning: bool
+
+
 class CombatSystem:
+    """Обрабатывает атаки игрока, боевые навыки и награды за врагов."""
     def __init__(self):
         self.attack_visual_events = []
         self.energy_waves = []
         self.pending_double_hits = []
 
-    def handle_player_attack(
-        self,
-        mouse_pos,
-        player,
-        enemy_manager,
-        loot_system,
-        on_damage_events,
-        on_stage_clear,
-        is_transitioning,
-    ):
-        if not player or not enemy_manager or is_transitioning:
+    def handle_player_attack(self, mouse_pos, context):
+        """Обрабатывает атаку игрока в переданном боевом контексте."""
+        player = context.player
+        enemy_manager = context.enemy_manager
+        loot_system = context.loot_system
+        if not player or not enemy_manager or context.is_transitioning:
             return
 
         if not player.start_attack(mouse_pos):
@@ -46,18 +55,32 @@ class CombatSystem:
         )
         self._queue_slash_visual(attack_rect, player.direction)
         self._spawn_drops(enemy_manager, loot_system, defeated_positions)
-        on_damage_events()
-        on_stage_clear()
+        context.on_damage_events()
+        context.on_stage_clear()
 
         if hit_count > 0:
             self._trigger_attack_skill_effects(player, attack_rect)
 
-    def update(self, dt, player, enemy_manager, loot_system, on_damage_events, on_stage_clear):
+    def update(self, dt, context):
+        """Обновляет отложенные боевые эффекты."""
+        enemy_manager = context.enemy_manager
         if not enemy_manager:
             return
 
-        self._update_pending_double_hits(dt, enemy_manager, loot_system, on_damage_events, on_stage_clear)
-        self._update_energy_waves(dt, enemy_manager, loot_system, on_damage_events, on_stage_clear)
+        self._update_pending_double_hits(
+            dt,
+            enemy_manager,
+            context.loot_system,
+            context.on_damage_events,
+            context.on_stage_clear,
+        )
+        self._update_energy_waves(
+            dt,
+            enemy_manager,
+            context.loot_system,
+            context.on_damage_events,
+            context.on_stage_clear,
+        )
 
     def _trigger_attack_skill_effects(self, player, attack_rect):
         if player.has_skill("attack_wave"):
@@ -180,6 +203,7 @@ class CombatSystem:
 
 
 class EnergyWave:
+    """Хранит игровое состояние энергетической волны игрока."""
     def __init__(self, origin, direction, damage):
         self.position = pygame.Vector2(origin)
         self.start_x = self.position.x

@@ -1,6 +1,6 @@
 import pygame
 
-from settings import (
+from config import (
     STAGE_TITLE_FONT_PATH,
     XP_BAR_HEIGHT,
     XP_BAR_IMAGE_PATH,
@@ -10,6 +10,7 @@ from settings import (
 
 
 class XPBar:
+    """Плавно отображает текущий опыт и уровень игрока."""
     SOURCE_CROP_RECT = pygame.Rect(34, 159, 2114, 361)
     SOURCE_FILL_RECT = pygame.Rect(356, 128, 1615, 169)
     FILL_COLOR = (75, 210, 255)

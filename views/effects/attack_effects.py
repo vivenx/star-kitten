@@ -2,7 +2,7 @@ import math
 
 import pygame
 
-from settings import (
+from config import (
     ATTACK_WAVE_HEIGHT,
     ATTACK_WAVE_RANGE,
     ATTACK_WAVE_SPEED,
@@ -11,6 +11,7 @@ from settings import (
 
 
 class SlashEffect:
+    """Отображает кратковременный визуальный след атаки игрока."""
     def __init__(self, attack_rect, direction, color=(255, 92, 50)):
         self.rect = attack_rect.copy()
         self.direction = direction
@@ -55,6 +56,7 @@ class SlashEffect:
 
 
 class EnergyWaveEffect:
+    """Отвечает за отрисовку энергетической волны."""
     def __init__(self, origin, direction, damage):
         self.position = pygame.Vector2(origin)
         self.start_x = self.position.x

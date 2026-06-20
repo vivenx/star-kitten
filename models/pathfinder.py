@@ -4,6 +4,7 @@ import pygame
 
 
 class Pathfinder:
+    """Ищет кратчайший путь по сетке с помощью алгоритма A*."""
     def __init__(self, stage, cell_size=40, agent_size=(40, 40)):
         self.stage = stage
         self.cell_size = cell_size
@@ -47,6 +48,18 @@ class Pathfinder:
                     self.grid.add((col, row))
 
     def find_path(self, start_pos, target_pos, blocked_rects=None):
+        """Находит кратчайший путь между точками с помощью алгоритма A*.
+
+        Args:
+            start_pos: Начальная позиция в мировых координатах.
+            target_pos: Целевая позиция в мировых координатах.
+            blocked_rects: Дополнительные прямоугольные области, недоступные
+                для перемещения.
+
+        Returns:
+            Список точек пути в мировых координатах. Если путь построить
+            невозможно, возвращается пустой список.
+        """
         self.build_grid(blocked_rects)
 
         start = self._world_to_grid(start_pos)

@@ -4,7 +4,7 @@ import pygame
 
 from models.enemy import Enemy
 from models.slime import Slime
-from settings import (
+from config import (
     CAVE_SLIME_BOSS_FIRST_ATTACK_DELAY,
     CAVE_SLIME_BOSS_MAX_HP,
     CAVE_SLIME_BOSS_SIZE,
@@ -13,6 +13,7 @@ from settings import (
 
 
 class CaveSlimeBoss(Enemy):
+    """Представляет пещерного босса, создающего мини-слизней."""
     is_boss = True
     behavior_type = "cave_slime_boss"
     visual_type = "cave_slime_boss"
@@ -41,6 +42,7 @@ class CaveSlimeBoss(Enemy):
 
 
 class MiniSlime(Slime):
+    """Представляет уменьшенного слизня, создаваемого пещерным боссом."""
     is_summoned_minion = True
 
     def __init__(self, x, y, difficulty_multiplier=1.0):

@@ -1,9 +1,10 @@
 import pygame
 
-from settings import HEIGHT, STAGE_TITLE_FONT_PATH, WIDTH
+from config import HEIGHT, STAGE_TITLE_FONT_PATH, WIDTH
 
 
 class IntroSceneView:
+    """Отображает изображения, заголовки и текст вступительной истории."""
     PANEL_HEIGHT = 245
     SIDE_MARGIN = 70
 

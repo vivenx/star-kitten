@@ -5,6 +5,7 @@ import pygame
 
 
 class PlayerView:
+    """Загружает и отображает анимации движения, атаки и урона игрока."""
     WALK_FRAME_TIME = 5 / 60
     ATTACK_FRAME_TIME = 4 / 60
     DAMAGE_FRAME_TIME = 5 / 60

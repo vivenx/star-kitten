@@ -1,13 +1,14 @@
 import pygame
 
 from models.enemy import Enemy
-from settings import (
+from config import (
     SLIME_ATTACK_COOLDOWN,
     SLIME_PROJECTILE_SIZE,
 )
 
 
 class SlimeProjectile:
+    """Хранит положение и скорость снаряда слизня."""
     def __init__(self, center, velocity):
         self.position = pygame.Vector2(center)
         self.velocity = pygame.Vector2(velocity)
@@ -17,6 +18,7 @@ class SlimeProjectile:
 
 
 class Slime(Enemy):
+    """Представляет дальнобойного противника, стреляющего снарядами."""
     behavior_type = "slime_ranged"
     visual_type = "slime"
 

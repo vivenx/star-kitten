@@ -3,7 +3,7 @@ import math
 
 from models.orbs.star_orb import StarOrb
 from models.orbs.xp_orb import XPOrb
-from settings import (
+from config import (
     CAVE_SLIME_STAR_PICKUP_RADIUS,
     FINAL_STAR_IMAGE_PATH,
     FINAL_STAR_SIZE,
@@ -12,6 +12,7 @@ from settings import (
 
 
 class LootSystem:
+    """Создаёт, обновляет и выдаёт игроку опыт и звёзды."""
     def __init__(self):
         self.xp_orbs = []
         self.star_orbs = []

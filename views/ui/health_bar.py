@@ -1,9 +1,10 @@
 import pygame
 
-from settings import HP_BAR_HEIGHT, HP_BAR_IMAGE_PATH, HP_BAR_WIDTH, STAGE_TITLE_FONT_PATH
+from config import HP_BAR_HEIGHT, HP_BAR_IMAGE_PATH, HP_BAR_WIDTH, STAGE_TITLE_FONT_PATH
 
 
 class HealthBar:
+    """Отображает текущее и максимальное здоровье игрока."""
     SOURCE_SIZE = (2112, 353)
     SOURCE_FILL_RECT = pygame.Rect(385, 121, 1510, 130)
     FILL_COLOR = (196, 28, 42)

@@ -2,6 +2,7 @@ import pygame
 
 
 class TutorialSceneController:
+    """Обрабатывает события и завершение обучающей сцены."""
     def __init__(self, game):
         self.game = game
 

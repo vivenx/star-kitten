@@ -1,9 +1,10 @@
 import pygame
 
-from settings import HEIGHT, STAGE_TITLE_FONT_PATH, WIDTH
+from config import HEIGHT, STAGE_TITLE_FONT_PATH, WIDTH
 
 
 class EndingSceneView:
+    """Отображает изображения и текст финальной истории."""
     PANEL_HEIGHT = 300
     SIDE_MARGIN = 70
 

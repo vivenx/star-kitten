@@ -4,6 +4,7 @@ from views.scenes.intro_scene_view import IntroSceneView
 
 
 class IntroScene:
+    """Объединяет модель, представление и контроллер вступительной сцены."""
     def __init__(self, game):
         self.model = IntroSceneModel()
         self.view = IntroSceneView(game.screen)

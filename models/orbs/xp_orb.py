@@ -1,6 +1,6 @@
 import pygame
 
-from settings import (
+from config import (
     XP_ORB_PICKUP_RADIUS,
     XP_ORB_RADIUS,
     XP_ORB_VALUE,
@@ -8,6 +8,7 @@ from settings import (
 
 
 class XPOrb:
+    """Представляет подбираемую сферу опыта."""
     def __init__(self, x, y, value=XP_ORB_VALUE):
         self.position = pygame.Vector2(x, y)
         self.value = value

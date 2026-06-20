@@ -1,4 +1,5 @@
 class EndingSceneModel:
+    """Хранит кадры и текущее состояние финальной истории."""
     FRAMES = (
         (
             "После долгого пути котенок наконец нашел упавшую звезду.\n"
@@ -25,17 +26,21 @@ class EndingSceneModel:
     )
 
     def __init__(self):
+        """Создаёт модель финальной сцены с первого кадра."""
         self.frame_index = 0
 
     @property
     def text(self):
+        """Возвращает текст текущего кадра."""
         return self.FRAMES[self.frame_index]
 
     @property
     def is_last_frame(self):
+        """Проверяет, является ли текущий кадр последним."""
         return self.frame_index == len(self.FRAMES) - 1
 
     def advance(self):
+        """Переходит к следующему кадру и сообщает результат перехода."""
         if self.is_last_frame:
             return False
         self.frame_index += 1

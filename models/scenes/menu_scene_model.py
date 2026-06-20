@@ -1,4 +1,5 @@
 class MenuSceneModel:
+    """Хранит области кнопок и состояние подтверждения в главном меню."""
     def __init__(self):
         self.start_button_points = [(545, 408), (117, 410), (120, 507), (554, 509)]
         self.continue_button_points = [(545, 548), (117, 550), (120, 646), (554, 648)]

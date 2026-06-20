@@ -2,7 +2,7 @@ import os
 
 import pygame
 
-from settings import (
+from config import (
     BOSS_APPEARANCE_FRAME_TIME,
     BOSS_ATTACK_ANIMATION_DURATION,
     BOSS_SIZE,
@@ -10,6 +10,7 @@ from settings import (
 
 
 class BossView:
+    """Загружает анимации и отображает лесного босса и его атаки."""
     APPEARANCE_FRAME_TIME = BOSS_APPEARANCE_FRAME_TIME
 
     def __init__(self):

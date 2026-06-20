@@ -1,23 +1,8 @@
-import pygame
+from controllers.scenes.frame_scene_controller import FrameSceneController
 
 
-class EndingSceneController:
+class EndingSceneController(FrameSceneController):
+    """Управляет переключением кадров и завершением финальной сцены."""
     def __init__(self, game, model):
-        self.game = game
-        self.model = model
-
-    def handle_events(self):
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                self.game.running = False
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    self.game.finish_ending()
-                elif event.key in (pygame.K_SPACE, pygame.K_RETURN, pygame.K_RIGHT):
-                    self._advance()
-            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                self._advance()
-
-    def _advance(self):
-        if not self.model.advance():
-            self.game.finish_ending()
+        """Создаёт контроллер финальной сцены."""
+        super().__init__(game, model, game.finish_ending)

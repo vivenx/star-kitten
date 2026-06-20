@@ -2,7 +2,7 @@ import pygame
 
 from controllers.systems.enemy_behavior_system import EnemyBehaviorSystem
 from models.slime import SlimeProjectile
-from settings import (
+from config import (
     SLIME_ATTACK_RANGE,
     SLIME_PREFERRED_DISTANCE,
     SLIME_PROJECTILE_DAMAGE,
@@ -11,6 +11,7 @@ from settings import (
 
 
 class SlimeBehaviorSystem(EnemyBehaviorSystem):
+    """Дополняет базовое поведение врага стрельбой и обновлением снарядов."""
     def update(self, slime, dt, player, pathfinder, solid_rects, enemies, play_area):
         if not slime.is_alive():
             return False

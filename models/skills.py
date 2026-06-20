@@ -2,11 +2,12 @@ from dataclasses import dataclass, field
 
 import pygame
 
-from settings import SKILL_LOCKED
+from config import SKILL_LOCKED
 
 
 @dataclass(frozen=True)
 class SkillNode:
+    """Описывает неизменяемый узел дерева навыков."""
     skill_id: str
     icon_rect: pygame.Rect
     state: str = SKILL_LOCKED

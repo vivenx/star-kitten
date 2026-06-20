@@ -1,4 +1,5 @@
 class IntroSceneModel:
+    """Хранит кадры и текущее состояние вступительной истории."""
     FRAMES = (
         (
             "Мир заражается",
@@ -33,21 +34,26 @@ class IntroSceneModel:
     )
 
     def __init__(self):
+        """Создаёт модель вступительной сцены с первого кадра."""
         self.frame_index = 0
 
     @property
     def title(self):
+        """Возвращает заголовок текущего кадра."""
         return self.FRAMES[self.frame_index][0]
 
     @property
     def text(self):
+        """Возвращает текст текущего кадра."""
         return self.FRAMES[self.frame_index][1]
 
     @property
     def is_last_frame(self):
+        """Проверяет, является ли текущий кадр последним."""
         return self.frame_index == len(self.FRAMES) - 1
 
     def advance(self):
+        """Переходит к следующему кадру и сообщает результат перехода."""
         if self.is_last_frame:
             return False
         self.frame_index += 1

@@ -1,5 +1,5 @@
 import pygame
-from settings import WIDTH, HEIGHT, FPS
+from config import WIDTH, HEIGHT, FPS
 from controllers.managers.save_manager import SaveManager
 from scenes.menu_scene import MenuScene
 from scenes.game_scene import GameScene
@@ -9,6 +9,7 @@ from scenes.ending_scene import EndingScene
 
 
 class Game:
+    """Управляет главным циклом игры и переключением между сценами."""
     def __init__(self):
         pygame.init()
 

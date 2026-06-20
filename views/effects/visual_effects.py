@@ -1,6 +1,6 @@
 import pygame
 
-from settings import (
+from config import (
     DAMAGE_NUMBER_DURATION,
     DAMAGE_NUMBER_FONT_SIZE,
     DAMAGE_NUMBER_RISE_SPEED,
@@ -16,6 +16,7 @@ from settings import (
 
 
 class DamageNumber:
+    """Отображает всплывающее и постепенно исчезающее число урона."""
     def __init__(self, x, y, amount, color):
         self.position = pygame.Vector2(x, y)
         self.amount = amount
@@ -45,6 +46,7 @@ class DamageNumber:
 
 
 class StageClearMessage:
+    """Отображает сообщение об успешном прохождении этапа."""
     def __init__(self):
         self.font = pygame.font.Font(STAGE_TITLE_FONT_PATH, STAGE_CLEAR_MESSAGE_FONT_SIZE)
         self.text = "Этап зачищен!"

@@ -2,6 +2,7 @@ from views.effects.attack_effects import EnergyWaveEffect, SlashEffect
 
 
 class CombatEffectsView:
+    """Получает боевые события и отображает соответствующие эффекты."""
     def __init__(self):
         self.slash_effects = []
         self.energy_wave_phases = {}

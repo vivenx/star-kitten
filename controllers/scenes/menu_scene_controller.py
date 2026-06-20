@@ -2,6 +2,7 @@ import pygame
 
 
 class MenuSceneController:
+    """Обрабатывает пользовательские действия в главном меню."""
     def __init__(self, game, model, view):
         self.game = game
         self.model = model

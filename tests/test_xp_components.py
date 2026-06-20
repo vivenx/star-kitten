@@ -4,7 +4,7 @@ import pygame
 
 from models.orbs.xp_orb import XPOrb
 from views.ui.xp_bar import XPBar
-from settings import XP_BAR_LERP_SPEED, XP_BAR_WIDTH
+from config import XP_BAR_LERP_SPEED, XP_BAR_WIDTH
 
 
 class DummyPlayer:

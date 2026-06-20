@@ -1,5 +1,5 @@
 import pygame
-from settings import (
+from config import (
     PLAYER_SPEED, PLAYER_SIZE, PLAYER_MAX_HP, PLAYER_COLLISION_HEIGHT_RATIO,
     PLAYER_ATTACK_COOLDOWN, DAMAGE_COOLDOWN_DEFAULT,
     PLAYER_ATTACK_DAMAGE, BASE_REQUIRED_XP, XP_PER_LEVEL,
@@ -10,6 +10,7 @@ from settings import (
 
 
 class Player(pygame.sprite.Sprite):
+    """Хранит состояние игрока и реализует его основные игровые действия."""
     def __init__(self, x, y):
         super().__init__()
 

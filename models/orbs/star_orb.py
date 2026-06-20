@@ -1,6 +1,6 @@
 import pygame
 
-from settings import (
+from config import (
     STAR_ORB_PICKUP_RADIUS,
     STAR_ORB_SIZE,
     STAR_ORB_VALUE,
@@ -8,6 +8,7 @@ from settings import (
 
 
 class StarOrb:
+    """Представляет подбираемую звезду или сюжетный интерактивный объект."""
     def __init__(
         self,
         x,

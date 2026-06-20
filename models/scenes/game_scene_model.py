@@ -1,20 +1,25 @@
-from controllers.managers.enemy_manager import EnemyManager
-from controllers.managers.stage_manager import StageManager
-from controllers.systems.combat_system import CombatSystem
-from controllers.systems.loot_system import LootSystem
-from controllers.systems.player_collision_system import PlayerCollisionSystem
-from models.player import Player
-
-
 class GameSceneModel:
-    def __init__(self):
+    """Хранит общее изменяемое состояние основной игровой сцены."""
+    def __init__(
+        self,
+        *,
+        stage_manager,
+        loot_system,
+        combat_system,
+        player_collision_system,
+        player_factory,
+        enemy_manager_factory,
+    ):
+        """Создаёт модель с переданными извне игровыми зависимостями."""
+        self.stage_manager = stage_manager
+        self.loot_system = loot_system
+        self.combat_system = combat_system
+        self.player_collision_system = player_collision_system
+        self._player_factory = player_factory
+        self._enemy_manager_factory = enemy_manager_factory
         self.player = None
-        self.stage_manager = None
         self.enemy_manager = None
         self.damage_numbers = []
-        self.loot_system = LootSystem()
-        self.combat_system = CombatSystem()
-        self.player_collision_system = PlayerCollisionSystem()
         self.current_stage_index = 0
         self.stage_start_progress = None
         self.endless_start_progress = None
@@ -28,12 +33,12 @@ class GameSceneModel:
         self.skill_tree_open = False
         self.game_over = False
 
-        self._setup_stage_manager()
         self._create_player()
         self._create_enemy_manager()
         self.save_stage_start_progress()
 
     def start_endless_mode(self):
+        """Запускает бесконечный режим и возвращает признак успешного перехода."""
         self.endless_start_progress = self.player.get_progress_snapshot()
         self.stage_manager.begin_endless_mode()
         if not self.stage_manager.load_next_stage():
@@ -50,15 +55,14 @@ class GameSceneModel:
         self.save_stage_start_progress()
         return True
 
-    def _setup_stage_manager(self):
-        self.stage_manager = StageManager()
-
     def _create_player(self):
+        """Создаёт игрока в начальной точке текущего этапа."""
         spawn_pos = self.stage_manager.current_stage.player_spawn
-        self.player = Player(spawn_pos.x, spawn_pos.y)
+        self.player = self._player_factory(spawn_pos.x, spawn_pos.y)
 
     def _create_enemy_manager(self):
-        self.enemy_manager = EnemyManager(
+        """Создаёт менеджер врагов для текущего этапа."""
+        self.enemy_manager = self._enemy_manager_factory(
             self.stage_manager.current_stage,
             self.player,
             self.stage_manager.difficulty_multiplier,
@@ -66,10 +70,12 @@ class GameSceneModel:
         )
 
     def save_stage_start_progress(self):
+        """Сохраняет снимок прогресса игрока на момент начала этапа."""
         if self.player:
             self.stage_start_progress = self.player.get_progress_snapshot()
 
     def reset_runtime_stage_state(self):
+        """Сбрасывает временное состояние текущего этапа."""
         self.loot_system.clear()
         self.damage_numbers = []
         self.combat_system.clear()
@@ -79,6 +85,7 @@ class GameSceneModel:
         self.final_cutscene_requested = False
 
     def reset_enemy_manager_for_current_stage(self):
+        """Перенастраивает менеджер врагов для текущего этапа."""
         if not self.enemy_manager:
             return
 
@@ -90,6 +97,7 @@ class GameSceneModel:
         )
 
     def restore_save_data(self, save_data):
+        """Восстанавливает состояние игры и возвращает результат операции."""
         stage_index = save_data.get("stage_index")
         player_progress = save_data.get("player")
         if not isinstance(stage_index, int):

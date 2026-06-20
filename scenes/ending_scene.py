@@ -4,6 +4,7 @@ from views.scenes.ending_scene_view import EndingSceneView
 
 
 class EndingScene:
+    """Объединяет модель, представление и контроллер финальной сцены."""
     def __init__(self, game):
         self.model = EndingSceneModel()
         self.view = EndingSceneView(game.screen)
